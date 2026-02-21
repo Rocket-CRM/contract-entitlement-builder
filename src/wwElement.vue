@@ -820,11 +820,18 @@ export default {
         if (groups.length === 0) errors.push('At least one condition group is required');
         groups.forEach((group, gIdx) => {
           if (!group?.collection) errors.push(`Group ${gIdx + 1}: Collection is required`);
-          const conditions = group?.conditions || [];
-          if (conditions.length === 0) errors.push(`Group ${gIdx + 1}: At least one condition is required`);
-          conditions.forEach((condition, cIdx) => {
-            if (!condition?.field) errors.push(`Group ${gIdx + 1}, Condition ${cIdx + 1}: Field is required`);
-          });
+          const groupType = group?.type || 'simple';
+          if (groupType === 'aggregate') {
+            if (!group?.aggregate) errors.push(`Group ${gIdx + 1}: Aggregate function is required`);
+            if (!group?.field) errors.push(`Group ${gIdx + 1}: Aggregate field is required`);
+            if (group?.value === undefined || group?.value === null || group?.value === '') errors.push(`Group ${gIdx + 1}: Threshold value is required`);
+          } else {
+            const conditions = group?.conditions || [];
+            if (conditions.length === 0) errors.push(`Group ${gIdx + 1}: At least one condition is required`);
+            conditions.forEach((condition, cIdx) => {
+              if (!condition?.field) errors.push(`Group ${gIdx + 1}, Condition ${cIdx + 1}: Field is required`);
+            });
+          }
         });
       } else if (nodeType === 'message') {
         if (!config?.channel) errors.push('Channel is required');

@@ -26,6 +26,7 @@
           class="polaris-card polaris-card--subdued"
         >
           <div class="polaris-card__section">
+            <!-- Group header -->
             <div class="polaris-inline polaris-inline--space-between">
               <span class="polaris-text polaris-text--body-md">Group {{ gIdx + 1 }}</span>
               <div class="polaris-inline polaris-inline--gap-tight">
@@ -46,6 +47,7 @@
               </div>
             </div>
 
+            <!-- Collection select -->
             <div class="polaris-text-field">
               <label class="polaris-text-field__label">Collection</label>
               <select
@@ -58,62 +60,191 @@
               </select>
             </div>
 
-            <div class="polaris-condition-list">
-              <template v-for="(condition, cIdx) in (group?.conditions || [])" :key="condition?.id || cIdx">
-                <div class="polaris-condition-item">
-                  <div v-if="cIdx > 0" class="polaris-condition-operator">
-                    <span class="polaris-text polaris-text--body-md">{{ group?.operator || 'AND' }}</span>
-                  </div>
+            <!-- Mode toggle (only if collection supports aggregate) -->
+            <div v-if="collectionSupportsAggregate(group?.collection)" class="condition-mode-toggle">
+              <button
+                class="polaris-button polaris-button--segmented"
+                :class="{ 'polaris-button--segmented-selected': getGroupType(group) === 'simple' }"
+                @click="updateGroupType(group.id, 'simple')"
+              >Check single record</button>
+              <button
+                class="polaris-button polaris-button--segmented"
+                :class="{ 'polaris-button--segmented-selected': getGroupType(group) === 'aggregate' }"
+                @click="updateGroupType(group.id, 'aggregate')"
+              >Check aggregate</button>
+            </div>
 
-                  <div class="polaris-condition-fields">
+            <!-- ═══ SIMPLE MODE ═══ -->
+            <template v-if="getGroupType(group) === 'simple'">
+              <div class="polaris-condition-list">
+                <template v-for="(condition, cIdx) in (group?.conditions || [])" :key="condition?.id || cIdx">
+                  <div class="polaris-condition-item">
+                    <div v-if="cIdx > 0" class="polaris-condition-operator">
+                      <span class="polaris-text polaris-text--body-md">{{ group?.operator || 'AND' }}</span>
+                    </div>
+
+                    <div class="polaris-condition-fields">
+                      <div class="polaris-text-field polaris-text-field--flex">
+                        <label class="polaris-text-field__label">Field</label>
+                        <select
+                          class="polaris-select__input"
+                          :value="condition?.field || ''"
+                          @change="updateConditionField(group.id, condition.id, $event.target.value)"
+                        >
+                          <option value="" disabled>Select field...</option>
+                          <option v-for="f in getFieldsForCollection(group?.collection)" :key="f?.name" :value="f?.name">{{ f?.label || f?.name }}</option>
+                        </select>
+                      </div>
+
+                      <div class="polaris-text-field polaris-text-field--operator">
+                        <label class="polaris-text-field__label">Operator</label>
+                        <select
+                          class="polaris-select__input"
+                          :value="condition?.operator || 'equals'"
+                          @change="updateConditionOperator(group.id, condition.id, $event.target.value)"
+                        >
+                          <option v-for="op in getOperatorsForField(group?.collection, condition?.field)" :key="op?.value" :value="op?.value">{{ op?.label }}</option>
+                        </select>
+                      </div>
+
+                      <div class="polaris-text-field polaris-text-field--flex" v-if="isValueRequired(condition?.operator)">
+                        <label class="polaris-text-field__label">Value</label>
+                        <input
+                          class="polaris-text-field__input"
+                          :value="condition?.value || ''"
+                          @input="updateConditionValue(group.id, condition.id, $event.target.value)"
+                        />
+                      </div>
+
+                      <button
+                        class="polaris-button polaris-button--plain polaris-button--critical polaris-button--icon-only"
+                        @click="removeCondition(group.id, condition.id)"
+                      > ✕ </button>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+              <button class="polaris-button polaris-button--plain polaris-button--full-width" @click="addCondition(group.id)">
+                + Add Condition
+              </button>
+            </template>
+
+            <!-- ═══ AGGREGATE MODE ═══ -->
+            <template v-if="getGroupType(group) === 'aggregate'">
+              <!-- Function + Field -->
+              <div class="polaris-condition-fields">
+                <div class="polaris-text-field polaris-text-field--flex">
+                  <label class="polaris-text-field__label">Function</label>
+                  <select
+                    class="polaris-select__input"
+                    :value="group?.aggregate || 'sum'"
+                    @change="updateGroupField(group.id, 'aggregate', $event.target.value)"
+                  >
+                    <option v-for="fn in AGGREGATE_FUNCTIONS" :key="fn.value" :value="fn.value">{{ fn.label }}</option>
+                  </select>
+                </div>
+                <div class="polaris-text-field polaris-text-field--flex">
+                  <label class="polaris-text-field__label">Field</label>
+                  <select
+                    class="polaris-select__input"
+                    :value="group?.field || ''"
+                    @change="updateGroupField(group.id, 'field', $event.target.value)"
+                  >
+                    <option value="" disabled>Select field...</option>
+                    <option
+                      v-for="f in getAggregateFields(group?.collection)"
+                      :key="f?.name"
+                      :value="f?.name"
+                    >{{ f?.label || f?.name }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Filters -->
+              <div class="aggregate-section">
+                <label class="polaris-text-field__label">Filters (optional)</label>
+                <div class="polaris-condition-list" v-if="group?.filters?.length">
+                  <div
+                    v-for="(filter, fIdx) in group.filters"
+                    :key="filter?.id || fIdx"
+                    class="polaris-condition-fields"
+                  >
                     <div class="polaris-text-field polaris-text-field--flex">
-                      <label class="polaris-text-field__label">Field</label>
                       <select
                         class="polaris-select__input"
-                        :value="condition?.field || ''"
-                        @change="updateConditionField(group.id, condition.id, $event.target.value)"
+                        :value="filter?.field || ''"
+                        @change="updateAggFilter(group.id, filter.id, 'field', $event.target.value)"
                       >
-                        <option value="" disabled>Select field...</option>
+                        <option value="" disabled>Field...</option>
                         <option v-for="f in getFieldsForCollection(group?.collection)" :key="f?.name" :value="f?.name">{{ f?.label || f?.name }}</option>
                       </select>
                     </div>
-
                     <div class="polaris-text-field polaris-text-field--operator">
-                      <label class="polaris-text-field__label">Operator</label>
                       <select
                         class="polaris-select__input"
-                        :value="condition?.operator || 'equals'"
-                        @change="updateConditionOperator(group.id, condition.id, $event.target.value)"
+                        :value="filter?.operator || 'equals'"
+                        @change="updateAggFilter(group.id, filter.id, 'operator', $event.target.value)"
                       >
-                        <option v-for="op in getOperatorsForField(group?.collection, condition?.field)" :key="op?.value" :value="op?.value">{{ op?.label }}</option>
+                        <option v-for="op in getOperatorsForField(group?.collection, filter?.field)" :key="op?.value" :value="op?.value">{{ op?.label }}</option>
                       </select>
                     </div>
-
-                    <div class="polaris-text-field polaris-text-field--flex" v-if="isValueRequired(condition?.operator)">
-                      <label class="polaris-text-field__label">Value</label>
+                    <div class="polaris-text-field polaris-text-field--flex" v-if="isValueRequired(filter?.operator)">
                       <input
                         class="polaris-text-field__input"
-                        :value="condition?.value || ''"
-                        @input="updateConditionValue(group.id, condition.id, $event.target.value)"
+                        :value="filter?.value || ''"
+                        @input="updateAggFilter(group.id, filter.id, 'value', $event.target.value)"
                       />
                     </div>
-
                     <button
                       class="polaris-button polaris-button--plain polaris-button--critical polaris-button--icon-only"
-                      @click="removeCondition(group.id, condition.id)"
+                      @click="removeAggFilter(group.id, filter.id)"
                     > ✕ </button>
                   </div>
                 </div>
-              </template>
-            </div>
+                <button class="polaris-button polaris-button--plain" @click="addAggFilter(group.id)">+ Add Filter</button>
+              </div>
 
-            <button class="polaris-button polaris-button--plain polaris-button--full-width" @click="addCondition(group.id)">
-              + Add Condition
-            </button>
+              <!-- Time range -->
+              <div class="polaris-text-field">
+                <label class="polaris-text-field__label">Time range</label>
+                <select
+                  class="polaris-select__input"
+                  :value="group?.time_range || ''"
+                  @change="updateGroupField(group.id, 'time_range', $event.target.value || null)"
+                >
+                  <option v-for="tr in TIME_RANGES" :key="tr.value" :value="tr.value || ''">{{ tr.label }}</option>
+                </select>
+              </div>
+
+              <!-- Threshold -->
+              <div class="polaris-condition-fields">
+                <div class="polaris-text-field polaris-text-field--operator">
+                  <label class="polaris-text-field__label">Threshold</label>
+                  <select
+                    class="polaris-select__input"
+                    :value="group?.operator || 'gte'"
+                    @change="updateGroupField(group.id, 'operator', $event.target.value)"
+                  >
+                    <option v-for="op in THRESHOLD_OPERATORS" :key="op.value" :value="op.value">{{ op.label }}</option>
+                  </select>
+                </div>
+                <div class="polaris-text-field polaris-text-field--flex">
+                  <label class="polaris-text-field__label">Value</label>
+                  <input
+                    class="polaris-text-field__input"
+                    type="number"
+                    :value="group?.value || ''"
+                    @input="updateGroupField(group.id, 'value', parseFloat($event.target.value) || 0)"
+                  />
+                </div>
+              </div>
+            </template>
           </div>
         </div>
       </div>
 
+      <!-- Empty state -->
       <div v-else class="polaris-text polaris-text--body-md" style="text-align: center; padding: 12px 0; color: var(--p-color-text-secondary);">
         No condition groups yet
       </div>
@@ -168,6 +299,31 @@ const OPERATORS_BY_TYPE = {
   ],
 };
 
+const AGGREGATE_FUNCTIONS = [
+  { value: 'sum', label: 'Sum' },
+  { value: 'count', label: 'Count' },
+  { value: 'avg', label: 'Average' },
+  { value: 'min', label: 'Min' },
+  { value: 'max', label: 'Max' },
+];
+
+const TIME_RANGES = [
+  { value: '1 month', label: 'Past 1 month' },
+  { value: '3 months', label: 'Past 3 months' },
+  { value: '6 months', label: 'Past 6 months' },
+  { value: '12 months', label: 'Past 12 months' },
+  { value: '24 months', label: 'Past 24 months' },
+  { value: '', label: 'All time' },
+];
+
+const THRESHOLD_OPERATORS = [
+  { value: 'gte', label: '>=' },
+  { value: 'gt', label: '>' },
+  { value: 'eq', label: '=' },
+  { value: 'lt', label: '<' },
+  { value: 'lte', label: '<=' },
+];
+
 export default {
   name: 'ConditionConfig',
   props: {
@@ -184,10 +340,24 @@ export default {
       emit('update', newConfig);
     };
 
+    const getCollectionMeta = (collectionName) => {
+      return safeCollections.value.find(c => c?.name === collectionName) || null;
+    };
+
+    const collectionSupportsAggregate = (collectionName) => {
+      return getCollectionMeta(collectionName)?.supports_aggregate === true;
+    };
+
+    const getGroupType = (group) => {
+      return group?.type || 'simple';
+    };
+
     const getFieldsForCollection = (collectionName) => {
-      const collectionsArray = Array.isArray(props.collections) ? props.collections : [];
-      const collection = collectionsArray.find(c => c?.name === collectionName);
-      return collection?.fields || [];
+      return getCollectionMeta(collectionName)?.fields || [];
+    };
+
+    const getAggregateFields = (collectionName) => {
+      return getCollectionMeta(collectionName)?.aggregate_fields || [];
     };
 
     const getFieldType = (collectionName, fieldName) => {
@@ -205,10 +375,13 @@ export default {
       return !['is_empty', 'is_not_empty', 'is_true', 'is_false'].includes(operator);
     };
 
+    // ─── Group CRUD ──────────────────────────────────────────────
+
     const addGroup = () => {
       const groups = [...(props.config?.groups || [])];
       groups.push({
         id: `group-${Date.now()}`,
+        type: 'simple',
         collection: '',
         operator: 'AND',
         conditions: [{
@@ -227,20 +400,75 @@ export default {
     };
 
     const updateGroupCollection = (groupId, collection) => {
+      const meta = getCollectionMeta(collection);
       const groups = (props.config?.groups || []).map(g => {
-        if (g?.id === groupId) {
+        if (g?.id !== groupId) return g;
+
+        const base = { ...g, collection, type: 'simple' };
+        if (meta?.supports_aggregate && g?.type === 'aggregate') {
+          const joinMeta = meta?.joinable_to || {};
           return {
-            ...g,
-            collection,
-            conditions: [{
-              id: `cond-${Date.now()}`,
-              field: '',
-              operator: 'equals',
-              value: '',
-            }],
+            ...base,
+            type: 'aggregate',
+            aggregate: 'sum',
+            field: '',
+            join: joinMeta.table ? { table: joinMeta.table, on: joinMeta.on } : undefined,
+            time_field: joinMeta.time_field || 'created_at',
+            time_range: '12 months',
+            filters: [],
+            operator: 'gte',
+            value: 0,
           };
         }
-        return g;
+        return {
+          ...base,
+          conditions: [{
+            id: `cond-${Date.now()}`,
+            field: '',
+            operator: 'equals',
+            value: '',
+          }],
+        };
+      });
+      emitUpdate({ ...props.config, groups });
+    };
+
+    const updateGroupType = (groupId, type) => {
+      const groups = (props.config?.groups || []).map(g => {
+        if (g?.id !== groupId) return g;
+        if (getGroupType(g) === type) return g;
+
+        const collection = g?.collection || '';
+        const meta = getCollectionMeta(collection);
+        const joinMeta = meta?.joinable_to || {};
+
+        if (type === 'aggregate') {
+          return {
+            id: g.id,
+            type: 'aggregate',
+            collection,
+            aggregate: 'sum',
+            field: '',
+            join: joinMeta.table ? { table: joinMeta.table, on: joinMeta.on } : undefined,
+            time_field: joinMeta.time_field || 'created_at',
+            time_range: '12 months',
+            filters: [],
+            operator: 'gte',
+            value: 0,
+          };
+        }
+        return {
+          id: g.id,
+          type: 'simple',
+          collection,
+          operator: 'AND',
+          conditions: [{
+            id: `cond-${Date.now()}`,
+            field: '',
+            operator: 'equals',
+            value: '',
+          }],
+        };
       });
       emitUpdate({ ...props.config, groups });
     };
@@ -252,6 +480,16 @@ export default {
       });
       emitUpdate({ ...props.config, groups });
     };
+
+    const updateGroupField = (groupId, field, value) => {
+      const groups = (props.config?.groups || []).map(g => {
+        if (g?.id === groupId) return { ...g, [field]: value };
+        return g;
+      });
+      emitUpdate({ ...props.config, groups });
+    };
+
+    // ─── Simple condition CRUD ───────────────────────────────────
 
     const addCondition = (groupId) => {
       const groups = (props.config?.groups || []).map(g => {
@@ -327,21 +565,77 @@ export default {
       emitUpdate({ ...props.config, groups });
     };
 
+    // ─── Aggregate filter CRUD ───────────────────────────────────
+
+    const addAggFilter = (groupId) => {
+      const groups = (props.config?.groups || []).map(g => {
+        if (g?.id === groupId) {
+          return {
+            ...g,
+            filters: [
+              ...(g?.filters || []),
+              { id: `flt-${Date.now()}`, field: '', operator: 'equals', value: '' },
+            ],
+          };
+        }
+        return g;
+      });
+      emitUpdate({ ...props.config, groups });
+    };
+
+    const removeAggFilter = (groupId, filterId) => {
+      const groups = (props.config?.groups || []).map(g => {
+        if (g?.id === groupId) {
+          return { ...g, filters: (g?.filters || []).filter(f => f?.id !== filterId) };
+        }
+        return g;
+      });
+      emitUpdate({ ...props.config, groups });
+    };
+
+    const updateAggFilter = (groupId, filterId, field, value) => {
+      const groups = (props.config?.groups || []).map(g => {
+        if (g?.id === groupId) {
+          return {
+            ...g,
+            filters: (g?.filters || []).map(f => {
+              if (f?.id !== filterId) return f;
+              if (field === 'field') return { ...f, field: value, operator: 'equals', value: '' };
+              return { ...f, [field]: value };
+            }),
+          };
+        }
+        return g;
+      });
+      emitUpdate({ ...props.config, groups });
+    };
+
     return {
       safeCollections,
+      AGGREGATE_FUNCTIONS,
+      TIME_RANGES,
+      THRESHOLD_OPERATORS,
       emitUpdate,
+      getGroupType,
+      collectionSupportsAggregate,
       getFieldsForCollection,
+      getAggregateFields,
       getOperatorsForField,
       isValueRequired,
       addGroup,
       removeGroup,
       updateGroupCollection,
+      updateGroupType,
       updateGroupOperator,
+      updateGroupField,
       addCondition,
       removeCondition,
       updateConditionField,
       updateConditionOperator,
       updateConditionValue,
+      addAggFilter,
+      removeAggFilter,
+      updateAggFilter,
     };
   },
 };
@@ -436,6 +730,28 @@ export default {
   display: flex;
   gap: var(--p-space-200);
   align-items: flex-end;
+}
+
+.condition-mode-toggle {
+  display: flex;
+  margin-top: var(--p-space-300);
+
+  .polaris-button--segmented {
+    flex: 1;
+    justify-content: center;
+    font-size: var(--p-font-size-275);
+  }
+}
+
+.aggregate-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--p-space-200);
+  margin-top: var(--p-space-300);
+
+  .polaris-condition-list {
+    margin-top: var(--p-space-100);
+  }
 }
 
 .polaris-card + .polaris-card { margin-top: var(--p-space-300); }
