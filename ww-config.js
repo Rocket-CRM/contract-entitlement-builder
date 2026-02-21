@@ -26,7 +26,9 @@ export default {
       'collections',
       'channels',
       'messageTemplates',
-      'actionOptions',
+      'supabaseUrl',
+      'supabaseAnonKey',
+      'authToken',
     ],
   },
   actions: [
@@ -505,22 +507,49 @@ export default {
         'Used by Message node config panel for template selection. Each template should have id, name, channel, and content.',
       /* wwEditor:end */
     },
-    actionOptions: {
-      label: { en: 'Action Options' },
-      type: 'Info',
+    supabaseUrl: {
+      label: { en: 'Supabase URL' },
+      type: 'Text',
       section: 'settings',
-      options: {
-        text: { en: 'Bind result of bff_get_amp_action_options' },
-      },
       bindable: true,
-      defaultValue: {},
+      defaultValue: '',
       /* wwEditor:start */
       bindingValidation: {
-        type: 'object',
-        tooltip: 'Object from bff_get_amp_action_options: {ticket_types, tags, personas, forms}. Each form includes fields array.',
+        type: 'string',
+        tooltip: 'Supabase project URL (e.g., https://abc.supabase.co)',
       },
       propertyHelp:
-        'Used by Action node config panel. Bind to the result of bff_get_amp_action_options RPC call. Contains ticket_types, tags, personas, and forms with their fields.',
+        'Used by Action node config panel to fetch dropdown options (tags, personas, forms, ticket types) via RPC calls.',
+      /* wwEditor:end */
+    },
+    supabaseAnonKey: {
+      label: { en: 'Supabase Anon Key' },
+      type: 'Text',
+      section: 'settings',
+      bindable: true,
+      defaultValue: '',
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Supabase publishable/anon key for the apikey header',
+      },
+      propertyHelp:
+        'The publishable API key from your Supabase project settings. Used as the apikey header in RPC calls.',
+      /* wwEditor:end */
+    },
+    authToken: {
+      label: { en: 'Auth Token (JWT)' },
+      type: 'Text',
+      section: 'settings',
+      bindable: true,
+      defaultValue: '',
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Current admin user JWT. Bind to Supabase plugin access token.',
+      },
+      propertyHelp:
+        'The current admin user\'s JWT from the Supabase auth session. Used for Authorization header in RPC calls. Bind to your Supabase plugin\'s access_token.',
       /* wwEditor:end */
     },
 

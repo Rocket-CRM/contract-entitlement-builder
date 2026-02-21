@@ -100,8 +100,9 @@
         <ActionConfig
           v-else-if="editingNodeType === 'action'"
           :config="editingConfig"
-          :action-options="actionOptionsData"
-          :channels="channelsData"
+          :supabase-url="supabaseUrlData"
+          :supabase-anon-key="supabaseAnonKeyData"
+          :auth-token="authTokenData"
           @update="handleConfigUpdate"
         />
           <AgentConfig
@@ -746,7 +747,9 @@ export default {
       { value: 'push', label: 'Push Notification' },
     ]);
     const messageTemplatesData = computed(() => props.content?.messageTemplates || []);
-    const actionOptionsData = computed(() => props.content?.actionOptions || {});
+    const supabaseUrlData = computed(() => props.content?.supabaseUrl || '');
+    const supabaseAnonKeyData = computed(() => props.content?.supabaseAnonKey || '');
+    const authTokenData = computed(() => props.content?.authToken || '');
     const configPanelWidth = computed(() => props.content?.configPanelWidth || '360px');
     const configPanelStyle = computed(() => ({ width: configPanelWidth.value }));
     const configValidationErrorsList = computed(() => configValidationErrors.value || []);
@@ -1731,7 +1734,9 @@ export default {
       collectionsData,
       channelsData,
       messageTemplatesData,
-      actionOptionsData,
+      supabaseUrlData,
+      supabaseAnonKeyData,
+      authTokenData,
       configValidationErrorsList,
       handleConfigUpdate,
       markConfigChanged,
