@@ -190,7 +190,7 @@
 </template>
 
 <script>
-import { ref, computed, watch, h, markRaw, nextTick } from 'vue';
+import { ref, computed, watch, h, markRaw, nextTick, onMounted } from 'vue';
 import { VueFlow, useVueFlow, Handle, Position } from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
@@ -1609,27 +1609,6 @@ export default {
           newEdges
         );
 
-        const isEmpty = vfNodes.length === 0;
-
-        if (isEmpty && !isReadOnly.value) {
-          const triggerId = crypto.randomUUID();
-          const triggerData = getDefaultNodeData('condition');
-          triggerData.label = 'Trigger';
-          vfNodes.push({
-            id: triggerId,
-            type: 'condition',
-            position: { x: 250, y: 200 },
-            data: {
-              ...triggerData,
-              color: getNodeColor('condition'),
-              showEditAction: showEditAction.value,
-              showDeleteAction: false,
-              onEdit: handleNodeEdit,
-              onDelete: handleNodeDelete,
-            },
-          });
-        }
-
         nodes.value = vfNodes;
         edges.value = vfEdges;
 
@@ -1642,14 +1621,35 @@ export default {
           }
           setTimeout(() => {
             isInitialLoad.value = false;
-            if (isEmpty && !isReadOnly.value && vfNodes.length > 0) {
-              openConfigPanel(vfNodes[0].id);
-            }
-          }, 150);
+          }, 100);
         });
       },
       { immediate: true, deep: true }
     );
+
+    // Auto-create trigger node on empty workflows after component is mounted
+    const autoTriggerCreated = ref(false);
+    onMounted(() => {
+      setTimeout(() => {
+        if (nodes.value.length === 0 && !isReadOnly.value && !autoTriggerCreated.value) {
+          autoTriggerCreated.value = true;
+          const newNode = addNode('condition', 250, 200, null, 'Trigger');
+          if (newNode) {
+            nodes.value = nodes.value.map(n => {
+              if (n.id === newNode.id) {
+                return { ...n, data: { ...n.data, showDeleteAction: false } };
+              }
+              return n;
+            });
+            setIsDirty(false);
+            nextTick(() => {
+              if (vueFlowRef.value) vueFlowRef.value.fitView({ padding: 0.2 });
+              setTimeout(() => openConfigPanel(newNode.id), 100);
+            });
+          }
+        }
+      }, 300);
+    });
 
     // Watch nodes array and fit view
     watch(
