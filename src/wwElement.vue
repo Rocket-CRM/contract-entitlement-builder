@@ -33,12 +33,12 @@
           <div class="palette-group__label">{{ group.label }}</div>
           <div
             v-for="nodeType in group.nodes"
-            :key="nodeType.type"
+            :key="nodeType.subType || nodeType.type"
             class="palette-item"
             draggable="true"
-            @dragstart="onDragStart($event, nodeType.type)"
+            @dragstart="onDragStart($event, nodeType)"
           >
-            <span class="palette-item__icon" :style="{ color: getNodeColor(nodeType.type) }">{{ nodeType.icon }}</span>
+            <span class="palette-item__icon" :style="{ color: nodeType.color || getNodeColor(nodeType.type) }">{{ nodeType.icon }}</span>
             <span class="palette-item__label">{{ nodeType.label }}</span>
             <span class="palette-item__grip">
               <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor">
@@ -565,7 +565,7 @@ export default {
     const vueFlowRef = ref(null);
     const nodes = ref([]);
     const edges = ref([]);
-    const draggedType = ref(null);
+    const draggedNodeInfo = ref(null);
     const isInitialLoad = ref(true);
 
     // Custom node types registration
@@ -597,19 +597,29 @@ export default {
       },
     };
 
-    // Node palette grouped by category
+    // Node palette grouped by category — each item is a specific action
     const nodeGroups = [
       {
         label: 'Messages',
         nodes: [
-          { type: 'message', label: 'Message', icon: '✉️' },
+          { type: 'action', subType: 'send_line', label: 'LINE Message', icon: '💬', color: '#06C755' },
+          { type: 'action', subType: 'send_sms', label: 'SMS', icon: '📱', color: '#10B981' },
         ],
       },
       {
-        label: 'Actions',
+        label: 'Loyalty',
         nodes: [
-          { type: 'action', label: 'Action', icon: '⚡' },
-          { type: 'api', label: 'API call', icon: '🔌' },
+          { type: 'action', subType: 'award_currency', label: 'Award Currency', icon: '🪙', color: '#F59E0B' },
+          { type: 'action', subType: 'assign_tag', label: 'Assign Tag', icon: '🏷️', color: '#F59E0B' },
+          { type: 'action', subType: 'remove_tag', label: 'Remove Tag', icon: '🏷️', color: '#EF4444' },
+          { type: 'action', subType: 'assign_persona', label: 'Assign Persona', icon: '👤', color: '#F59E0B' },
+          { type: 'action', subType: 'submit_form', label: 'Submit Form', icon: '📋', color: '#F59E0B' },
+        ],
+      },
+      {
+        label: 'Integration',
+        nodes: [
+          { type: 'action', subType: 'api_call', label: 'Webhook', icon: '🔗', color: '#8B5CF6' },
         ],
       },
       {
@@ -981,50 +991,33 @@ export default {
     const showDeleteAction = computed(() => props.content?.showDeleteAction !== false);
 
     // Default data structures for each node type
-    const getDefaultNodeData = (type) => {
+    // Action sub-type defaults (used when dragging specific actions from palette)
+    const actionSubTypeDefaults = {
+      award_currency: { action_type: 'award_currency', currency: 'points', amount: 100, description: '' },
+      assign_tag: { action_type: 'assign_tag', tag_id: '' },
+      remove_tag: { action_type: 'remove_tag', tag_id: '' },
+      assign_persona: { action_type: 'assign_persona', persona_id: '' },
+      submit_form: { action_type: 'submit_form', form_id: '', field_values: {} },
+      send_line: { action_type: 'send_line', channel: 'line', content: '', json_content: null },
+      send_sms: { action_type: 'send_sms', channel: 'sms', message: '' },
+      api_call: { action_type: 'api_call', method: 'POST', url: '', body: null },
+    };
+
+    const getDefaultNodeData = (type, subType = null, label = null) => {
+      if (type === 'action' && subType && actionSubTypeDefaults[subType]) {
+        return { label: label || subType, ...actionSubTypeDefaults[subType] };
+      }
+
       const defaults = {
-        trigger: {
-          label: 'New Trigger',
-          event: null,
-        },
-        condition: {
-          label: 'New Condition',
-          groups_operator: 'AND',
-          groups: [],
-        },
-        action: {
-          label: 'New Action',
-          action_type: null,
-        },
-        message: {
-          label: 'New Message',
-          channel: null,
-          template_id: null,
-          subject: '',
-          content: '',
-          json_content: null,
-        },
-        wait: {
-          label: 'New Wait',
-          duration: 1,
-          unit: 'days',
-        },
-        api: {
-          label: 'New API Call',
-          method: 'POST',
-          url: '',
-          headers: {},
-          body: '',
-          timeout_seconds: 30,
-          retry_count: 2,
-        },
-        agent: {
-          label: 'New Agent',
-          campaign_objective: '',
-          use_groq: true,
-        },
+        trigger: { label: 'New Trigger', event: null },
+        condition: { label: 'New Condition', groups_operator: 'AND', groups: [] },
+        action: { label: 'New Action', action_type: null },
+        message: { label: 'New Message', channel: null, template_id: null, subject: '', content: '', json_content: null },
+        wait: { label: 'New Wait', duration: 1, unit: 'days' },
+        api: { label: 'New API Call', method: 'POST', url: '', headers: {}, body: '', timeout_seconds: 30, retry_count: 2 },
+        agent: { label: 'New Agent', campaign_objective: '', use_groq: true },
       };
-      return defaults[type] || { label: `New ${type}` };
+      return defaults[type] || { label: label || `New ${type}` };
     };
 
     // Strip internal fields from node data for clean event emission
@@ -1382,8 +1375,8 @@ export default {
     };
 
     // Add node helper function
-    const addNode = (type, x, y) => {
-      const defaultData = getDefaultNodeData(type);
+    const addNode = (type, x, y, subType = null, label = null) => {
+      const defaultData = getDefaultNodeData(type, subType, label);
       
       const newNode = {
         id: crypto.randomUUID(),
@@ -1414,10 +1407,10 @@ export default {
     };
 
     // Drag and Drop handlers
-    const onDragStart = (event, type) => {
+    const onDragStart = (event, nodeInfo) => {
       if (isReadOnly.value) return;
-      draggedType.value = type;
-      event.dataTransfer.setData('application/vueflow', type);
+      draggedNodeInfo.value = nodeInfo;
+      event.dataTransfer.setData('application/vueflow', nodeInfo?.type || nodeInfo);
       event.dataTransfer.effectAllowed = 'move';
     };
 
@@ -1425,42 +1418,26 @@ export default {
       event.preventDefault();
       if (isReadOnly.value) return;
 
-      const type = event.dataTransfer.getData('application/vueflow');
-      console.log('[WorkflowBuilder] Drop event - type:', type);
-      if (!type) {
-        console.log('[WorkflowBuilder] No type in dataTransfer, using draggedType:', draggedType.value);
-      }
-      
-      const nodeType = type || draggedType.value;
+      const info = draggedNodeInfo.value;
+      const fallbackType = event.dataTransfer.getData('application/vueflow');
+      const nodeType = info?.type || fallbackType;
       if (!nodeType) return;
 
       const bounds = canvasRef.value?.getBoundingClientRect();
-      if (!bounds) {
-        console.log('[WorkflowBuilder] No canvas bounds');
-        return;
-      }
+      if (!bounds) return;
 
-      // Calculate position relative to canvas
       let x = event.clientX - bounds.left;
       let y = event.clientY - bounds.top;
 
-      // Get the Vue Flow instance to access viewport
       const vfInstance = vueFlowRef.value;
-      console.log('[WorkflowBuilder] VueFlow instance:', vfInstance);
-      
       if (vfInstance?.viewport) {
         const { viewport } = vfInstance;
-        console.log('[WorkflowBuilder] Viewport:', viewport);
         x = (x - viewport.x) / viewport.zoom;
         y = (y - viewport.y) / viewport.zoom;
       }
 
-      console.log('[WorkflowBuilder] Adding node at:', { x, y, type: nodeType });
-      const newNode = addNode(nodeType, x, y);
-      console.log('[WorkflowBuilder] New node created:', newNode);
-      console.log('[WorkflowBuilder] Total nodes:', nodes.value.length, nodes.value);
-      
-      draggedType.value = null;
+      addNode(nodeType, x, y, info?.subType, info?.label);
+      draggedNodeInfo.value = null;
     };
 
     // Node click handler
