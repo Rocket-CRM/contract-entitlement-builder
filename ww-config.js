@@ -4,6 +4,29 @@ export default {
       en: 'Workflow Builder',
     },
     icon: 'workflow',
+    customStylePropertiesOrder: [
+      'sidebarWidth',
+      'sidebarBackground',
+      'canvasBackground',
+      'gridColor',
+      'configPanelWidth',
+      'conditionNodeColor',
+      'messageNodeColor',
+      'waitNodeColor',
+      'apiNodeColor',
+      'agentNodeColor',
+    ],
+    customSettingsPropertiesOrder: [
+      'initialWorkflow',
+      'initialNodes',
+      'initialEdges',
+      'readOnly',
+      'showEditAction',
+      'showDeleteAction',
+      'collections',
+      'channels',
+      'messageTemplates',
+    ],
   },
   actions: [
     {
@@ -57,6 +80,34 @@ export default {
       /* wwEditor:start */
       actionDescription: {
         en: 'Updates the config data for a specific node by ID',
+      },
+      /* wwEditor:end */
+    },
+    {
+      name: 'openConfigPanel',
+      label: { en: 'Open Config Panel' },
+      action: 'openConfigPanel',
+      args: [
+        {
+          name: 'nodeId',
+          label: { en: 'Node ID' },
+          type: 'Text',
+          required: true,
+        },
+      ],
+      /* wwEditor:start */
+      actionDescription: {
+        en: 'Opens the config panel for a specific node by ID',
+      },
+      /* wwEditor:end */
+    },
+    {
+      name: 'closeConfigPanel',
+      label: { en: 'Close Config Panel' },
+      action: 'closeConfigPanel',
+      /* wwEditor:start */
+      actionDescription: {
+        en: 'Closes the config panel and discards unsaved changes',
       },
       /* wwEditor:end */
     },
@@ -116,9 +167,36 @@ export default {
       getTestEvent: '() => ({ errors: ["No nodes in workflow"] })',
       /* wwEditor:end */
     },
+    {
+      name: 'config-panel-opened',
+      label: { en: 'On Config Panel Opened' },
+      event: { nodeId: '', nodeType: '' },
+      default: true,
+      /* wwEditor:start */
+      getTestEvent: '() => ({ nodeId: "node-123", nodeType: "condition" })',
+      /* wwEditor:end */
+    },
+    {
+      name: 'config-panel-closed',
+      label: { en: 'On Config Panel Closed' },
+      event: {},
+      default: true,
+      /* wwEditor:start */
+      getTestEvent: '() => ({})',
+      /* wwEditor:end */
+    },
+    {
+      name: 'node-config-saved',
+      label: { en: 'On Node Config Saved' },
+      event: { nodeId: '', config: {} },
+      default: true,
+      /* wwEditor:start */
+      getTestEvent: '() => ({ nodeId: "node-123", config: { label: "Configured Node" } })',
+      /* wwEditor:end */
+    },
   ],
   properties: {
-    // Data Binding
+    // ─── Data Binding ────────────────────────────────────────────
     initialWorkflow: {
       label: { en: 'Workflow Data' },
       type: 'Object',
@@ -143,7 +221,7 @@ export default {
       options: {
         expandable: true,
         getItemLabel(item) {
-          return item?.node_config?.label || item?.node_type || 'Node';
+          return item?.node_name || item?.node_config?.label || item?.node_type || 'Node';
         },
         item: {
           type: 'Object',
@@ -170,6 +248,8 @@ export default {
                     { value: 'message', label: 'Message' },
                     { value: 'wait', label: 'Wait' },
                     { value: 'api', label: 'API Call' },
+                    { value: 'action', label: 'Action' },
+                    { value: 'agent', label: 'Agent' },
                   ],
                 },
                 defaultValue: 'message',
@@ -210,7 +290,7 @@ export default {
         tooltip: 'Array of node objects from database',
       },
       propertyHelp:
-        'Bind to Supabase collection of workflow nodes. Each node should have: id, node_type, position_x, position_y, node_config {label}',
+        'Bind to Supabase collection of workflow nodes. Each node should have: id, node_type, position_x, position_y, node_config {label, ...config}',
       /* wwEditor:end */
     },
     initialEdges: {
@@ -222,7 +302,7 @@ export default {
       options: {
         expandable: true,
         getItemLabel(item) {
-          return `${item?.source || '?'} → ${item?.target || '?'}`;
+          return `${item?.source || item?.from_node_id || '?'} → ${item?.target || item?.to_node_id || '?'}`;
         },
         item: {
           type: 'Object',
@@ -259,9 +339,11 @@ export default {
         tooltip: 'Array of edge objects from database',
       },
       propertyHelp:
-        'Bind to Supabase collection of workflow edges. Each edge should have: id, source, target, sourceHandle',
+        'Bind to Supabase collection of workflow edges. Each edge should have: id, source (or from_node_id), target (or to_node_id), sourceHandle',
       /* wwEditor:end */
     },
+
+    // ─── Behavior ────────────────────────────────────────────────
     readOnly: {
       label: { en: 'Read Only' },
       type: 'OnOff',
@@ -305,7 +387,87 @@ export default {
       /* wwEditor:end */
     },
 
-    // Styling
+    // ─── Config Panel Data Sources ───────────────────────────────
+    collections: {
+      label: { en: 'Available Collections' },
+      type: 'Info',
+      section: 'settings',
+      options: {
+        text: { en: 'Bind array of collections with fields for condition builder' },
+      },
+      bindable: true,
+      defaultValue: [],
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'array',
+        tooltip: 'Array of collections: [{name, label, fields: [{name, label, type}]}]. Bind to bff_get_workflow_collections result.',
+      },
+      propertyHelp:
+        'Used by the Condition node config panel. Each collection should have name, label, and fields array. Field types: string, number, boolean, date, array, uuid.',
+      /* wwEditor:end */
+    },
+    channels: {
+      label: { en: 'Available Channels' },
+      type: 'Array',
+      section: 'settings',
+      bindable: true,
+      defaultValue: [
+        { value: 'email', label: 'Email' },
+        { value: 'sms', label: 'SMS' },
+        { value: 'line', label: 'LINE' },
+        { value: 'push', label: 'Push Notification' },
+      ],
+      options: {
+        expandable: true,
+        getItemLabel(item, index) {
+          return item?.label || item?.value || `Channel ${index + 1}`;
+        },
+        item: {
+          type: 'Object',
+          defaultValue: { value: '', label: '' },
+          options: {
+            item: {
+              value: {
+                label: { en: 'Value' },
+                type: 'Text',
+              },
+              label: {
+                label: { en: 'Label' },
+                type: 'Text',
+              },
+            },
+          },
+        },
+      },
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'array',
+        tooltip: 'Array of messaging channels: [{value, label}]',
+      },
+      propertyHelp:
+        'Used by Message and Action node config panels for channel selection.',
+      /* wwEditor:end */
+    },
+    messageTemplates: {
+      label: { en: 'Message Templates' },
+      type: 'Info',
+      section: 'settings',
+      options: {
+        text: { en: 'Bind array of message templates' },
+      },
+      bindable: true,
+      defaultValue: [],
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'array',
+        tooltip: 'Array of message templates: [{id, name, channel, content}]',
+      },
+      propertyHelp:
+        'Used by Message node config panel for template selection. Each template should have id, name, channel, and content.',
+      /* wwEditor:end */
+    },
+
+    // ─── Styling ─────────────────────────────────────────────────
     sidebarWidth: {
       label: { en: 'Sidebar Width' },
       type: 'Length',
@@ -360,8 +522,23 @@ export default {
       },
       /* wwEditor:end */
     },
+    configPanelWidth: {
+      label: { en: 'Config Panel Width' },
+      type: 'Length',
+      section: 'style',
+      defaultValue: '360px',
+      bindable: true,
+      hidden: content => content?.readOnly,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Width of the node config panel (e.g., 360px, 400px)',
+      },
+      propertyHelp: 'Width of the node configuration sidebar that appears when editing a node.',
+      /* wwEditor:end */
+    },
 
-    // Node Colors
+    // ─── Node Colors ─────────────────────────────────────────────
     conditionNodeColor: {
       label: { en: 'Condition Node Color' },
       type: 'Color',
@@ -400,6 +577,16 @@ export default {
       bindable: true,
       /* wwEditor:start */
       bindingValidation: { type: 'string', tooltip: 'Color for API nodes' },
+      /* wwEditor:end */
+    },
+    agentNodeColor: {
+      label: { en: 'Agent Node Color' },
+      type: 'Color',
+      section: 'style',
+      defaultValue: '#06B6D4',
+      bindable: true,
+      /* wwEditor:start */
+      bindingValidation: { type: 'string', tooltip: 'Color for agent (AI) nodes' },
       /* wwEditor:end */
     },
   },

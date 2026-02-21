@@ -62,6 +62,81 @@
         <Controls v-if="!isReadOnly" position="bottom-right" />
       </VueFlow>
     </div>
+
+    <!-- Node Config Panel -->
+    <div
+      v-if="configPanelOpen && !isReadOnly"
+      class="config-panel"
+      :style="configPanelStyle"
+    >
+      <div class="config-panel__header">
+        <div class="config-panel__header-left">
+          <span class="config-panel__icon" :class="`config-panel__icon--${editingNodeType}`">
+            {{ nodeIconMap[editingNodeType] || '⚙️' }}
+          </span>
+          <div class="config-panel__header-info">
+            <span class="config-panel__type-label">{{ nodeTypeLabels[editingNodeType] || 'Node' }}</span>
+            <input
+              v-model="editingConfig.label"
+              class="config-panel__title-input"
+              placeholder="Node label"
+              @input="markConfigChanged"
+            />
+          </div>
+        </div>
+        <button class="config-panel__close-btn" @click="closeConfigPanel" title="Close">
+          <svg viewBox="0 0 20 20" width="16" height="16"><path d="M11.414 10l4.293-4.293a1 1 0 00-1.414-1.414L10 8.586 5.707 4.293a1 1 0 00-1.414 1.414L8.586 10l-4.293 4.293a1 1 0 101.414 1.414L10 11.414l4.293 4.293a1 1 0 001.414-1.414L11.414 10z" fill="currentColor"/></svg>
+        </button>
+      </div>
+
+      <div class="config-panel__content">
+        <ConditionConfig
+          v-if="editingNodeType === 'condition'"
+          :config="editingConfig"
+          :collections="collectionsData"
+          @update="handleConfigUpdate"
+        />
+        <MessageConfig
+          v-else-if="editingNodeType === 'message'"
+          :config="editingConfig"
+          :channels="channelsData"
+          :templates="messageTemplatesData"
+          @update="handleConfigUpdate"
+        />
+        <WaitConfig
+          v-else-if="editingNodeType === 'wait'"
+          :config="editingConfig"
+          @update="handleConfigUpdate"
+        />
+        <ApiConfig
+          v-else-if="editingNodeType === 'api'"
+          :config="editingConfig"
+          @update="handleConfigUpdate"
+        />
+        <ActionConfig
+          v-else-if="editingNodeType === 'action'"
+          :config="editingConfig"
+          :channels="channelsData"
+          @update="handleConfigUpdate"
+        />
+        <AgentConfig
+          v-else-if="editingNodeType === 'agent'"
+          :config="editingConfig"
+          @update="handleConfigUpdate"
+        />
+
+        <div v-if="configValidationErrorsList.length > 0" class="config-panel__errors">
+          <ul>
+            <li v-for="(error, idx) in configValidationErrorsList" :key="idx">{{ error }}</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="config-panel__footer">
+        <button class="config-panel__btn config-panel__btn--cancel" @click="cancelConfigEdit">Cancel</button>
+        <button class="config-panel__btn config-panel__btn--save" @click="saveConfigEdit">Save</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -73,6 +148,12 @@ import { Controls } from '@vue-flow/controls';
 import '@vue-flow/core/dist/style.css';
 import '@vue-flow/core/dist/theme-default.css';
 import '@vue-flow/controls/dist/style.css';
+import ConditionConfig from './components/ConditionConfig.vue';
+import MessageConfig from './components/MessageConfig.vue';
+import WaitConfig from './components/WaitConfig.vue';
+import ApiConfig from './components/ApiConfig.vue';
+import ActionConfig from './components/ActionConfig.vue';
+import AgentConfig from './components/AgentConfig.vue';
 
 // SVG Icons for node actions
 const EditIcon = () => h('svg', { 
@@ -148,7 +229,19 @@ const nodeIconMap = {
   api: '🔌',
   action: '⚡',
   trigger: '🎯',
+  agent: '🤖',
   test: '🧪',
+};
+
+const nodeTypeLabels = {
+  condition: 'Condition',
+  message: 'Message',
+  wait: 'Wait',
+  api: 'API Call',
+  action: 'Action',
+  trigger: 'Trigger',
+  agent: 'Agent',
+  test: 'Test',
 };
 
 // Custom Node Components - Shopify Flow style with LEFT/RIGHT handles
@@ -356,12 +449,59 @@ const TestNode = {
   },
 };
 
+// Agent node - AI-powered decision with true/false branching
+const AgentNode = {
+  name: 'AgentNode',
+  props: ['id', 'data', 'selected'],
+  setup(props) {
+    const showEdit = computed(() => props.data?.showEditAction !== false);
+    const showDelete = computed(() => props.data?.showDeleteAction !== false);
+    
+    return () =>
+      h(
+        'div',
+        {
+          class: ['flow-node', 'agent-node', { selected: props.selected }],
+          style: { '--node-color': props.data?.color || '#06B6D4' },
+        },
+        [
+          createNodeActions(props, showEdit.value, showDelete.value),
+          h(Handle, { type: 'target', position: Position.Left, id: 'input', class: 'flow-handle flow-handle-left' }),
+          h('div', { class: 'node-body' }, [
+            h('span', { class: 'node-label' }, props.data?.label || 'Agent'),
+            h('div', { class: 'node-icon-badge', style: { '--badge-color': props.data?.color || '#06B6D4' } }, '🤖'),
+          ]),
+          h(Handle, {
+            type: 'source',
+            position: Position.Right,
+            id: 'output-true',
+            class: 'flow-handle flow-handle-right',
+            style: { top: '35%' },
+          }),
+          h(Handle, {
+            type: 'source',
+            position: Position.Right,
+            id: 'output-false',
+            class: 'flow-handle flow-handle-right',
+            style: { top: '65%' },
+          }),
+        ]
+      );
+  },
+};
+
 export default {
   name: 'WorkflowBuilder',
   components: {
     VueFlow,
     Background,
     Controls,
+    ConditionConfig,
+    MessageConfig,
+    WaitConfig,
+    ApiConfig,
+    ActionConfig,
+    AgentConfig,
   },
   props: {
     uid: { type: String, required: true },
@@ -387,6 +527,7 @@ export default {
       api: markRaw(ApiNode),
       action: markRaw(ActionNode),
       trigger: markRaw(TriggerNode),
+      agent: markRaw(AgentNode),
       test: markRaw(TestNode),
     };
 
@@ -409,12 +550,12 @@ export default {
 
     // Node palette configuration - Shopify Flow style with icons and descriptions
     const nodeTypes = [
-      { type: 'trigger', label: 'Trigger', icon: '🎯', description: 'Start workflow when event occurs' },
       { type: 'condition', label: 'Condition', icon: '🔀', description: 'Branch based on conditions' },
       { type: 'action', label: 'Action', icon: '⚡', description: 'Perform an action or operation' },
       { type: 'message', label: 'Message', icon: '✉️', description: 'Send message to customer' },
       { type: 'wait', label: 'Wait', icon: '⏱️', description: 'Wait for a set amount of time' },
       { type: 'api', label: 'API Call', icon: '🔌', description: 'Send HTTP request to service' },
+      { type: 'agent', label: 'Agent', icon: '🤖', description: 'AI-powered decision' },
     ];
 
     // Workflow metadata from props
@@ -477,6 +618,202 @@ export default {
         defaultValue: {},
       });
 
+    // Config panel internal variables
+    const { value: configPanelOpenVar, setValue: setConfigPanelOpen } =
+      wwLib.wwVariable.useComponentVariable({
+        uid: props.uid,
+        name: 'configPanelOpen',
+        type: 'boolean',
+        defaultValue: false,
+      });
+
+    const { value: editingNodeIdVar, setValue: setEditingNodeId } =
+      wwLib.wwVariable.useComponentVariable({
+        uid: props.uid,
+        name: 'editingNodeId',
+        type: 'string',
+        defaultValue: '',
+      });
+
+    const { value: editingNodeTypeVar, setValue: setEditingNodeType } =
+      wwLib.wwVariable.useComponentVariable({
+        uid: props.uid,
+        name: 'editingNodeType',
+        type: 'string',
+        defaultValue: '',
+      });
+
+    const { value: editingConfigVar, setValue: setEditingConfigVar } =
+      wwLib.wwVariable.useComponentVariable({
+        uid: props.uid,
+        name: 'editingConfig',
+        type: 'object',
+        defaultValue: {},
+      });
+
+    const { value: configHasChanges, setValue: setConfigHasChanges } =
+      wwLib.wwVariable.useComponentVariable({
+        uid: props.uid,
+        name: 'configHasChanges',
+        type: 'boolean',
+        defaultValue: false,
+      });
+
+    const { value: configValidationErrors, setValue: setConfigValidationErrors } =
+      wwLib.wwVariable.useComponentVariable({
+        uid: props.uid,
+        name: 'configValidationErrors',
+        type: 'array',
+        defaultValue: [],
+      });
+
+    // Config panel local state
+    const configPanelOpen = ref(false);
+    const editingConfig = ref({});
+    const originalEditingConfig = ref({});
+    const editingNodeType = ref('');
+    const editingNodeIdLocal = ref('');
+
+    // Config panel data sources from props
+    const collectionsData = computed(() => props.content?.collections || []);
+    const channelsData = computed(() => props.content?.channels || [
+      { value: 'email', label: 'Email' },
+      { value: 'sms', label: 'SMS' },
+      { value: 'line', label: 'LINE' },
+      { value: 'push', label: 'Push Notification' },
+    ]);
+    const messageTemplatesData = computed(() => props.content?.messageTemplates || []);
+    const configPanelWidth = computed(() => props.content?.configPanelWidth || '360px');
+    const configPanelStyle = computed(() => ({ width: configPanelWidth.value }));
+    const configValidationErrorsList = computed(() => configValidationErrors.value || []);
+
+    const deepClone = (obj) => {
+      if (obj === null || obj === undefined) return obj;
+      return JSON.parse(JSON.stringify(obj));
+    };
+
+    // Config panel handlers
+    const openConfigPanel = (nodeId) => {
+      const node = nodes.value.find(n => n.id === nodeId);
+      if (!node) return;
+
+      const cleanData = getCleanNodeData(node.data);
+      editingConfig.value = deepClone(cleanData);
+      originalEditingConfig.value = deepClone(cleanData);
+      editingNodeType.value = node.type;
+      editingNodeIdLocal.value = nodeId;
+      configPanelOpen.value = true;
+
+      setConfigPanelOpen(true);
+      setEditingNodeId(nodeId);
+      setEditingNodeType(node.type);
+      setEditingConfigVar(cleanData);
+      setConfigHasChanges(false);
+      setConfigValidationErrors([]);
+
+      emit('trigger-event', {
+        name: 'config-panel-opened',
+        event: { nodeId, nodeType: node.type },
+      });
+    };
+
+    const closeConfigPanel = () => {
+      configPanelOpen.value = false;
+      editingConfig.value = {};
+      originalEditingConfig.value = {};
+      editingNodeType.value = '';
+      editingNodeIdLocal.value = '';
+
+      setConfigPanelOpen(false);
+      setEditingNodeId('');
+      setEditingNodeType('');
+      setEditingConfigVar({});
+      setConfigHasChanges(false);
+      setConfigValidationErrors([]);
+
+      emit('trigger-event', {
+        name: 'config-panel-closed',
+        event: {},
+      });
+    };
+
+    const handleConfigUpdate = (newConfig) => {
+      editingConfig.value = newConfig;
+      setEditingConfigVar(newConfig);
+      setConfigHasChanges(true);
+    };
+
+    const markConfigChanged = () => {
+      setConfigHasChanges(true);
+      setEditingConfigVar({ ...editingConfig.value });
+    };
+
+    const validateConfig = () => {
+      const errors = [];
+      const config = editingConfig.value;
+      const nodeType = editingNodeType.value;
+
+      if (nodeType === 'condition') {
+        const groups = config?.groups || [];
+        if (groups.length === 0) errors.push('At least one condition group is required');
+        groups.forEach((group, gIdx) => {
+          if (!group?.collection) errors.push(`Group ${gIdx + 1}: Collection is required`);
+          const conditions = group?.conditions || [];
+          if (conditions.length === 0) errors.push(`Group ${gIdx + 1}: At least one condition is required`);
+          conditions.forEach((condition, cIdx) => {
+            if (!condition?.field) errors.push(`Group ${gIdx + 1}, Condition ${cIdx + 1}: Field is required`);
+          });
+        });
+      } else if (nodeType === 'message') {
+        if (!config?.channel) errors.push('Channel is required');
+        if (!config?.template_id && !config?.content) errors.push('Either template or content is required');
+        if (config?.channel === 'email' && !config?.subject) errors.push('Subject is required for email');
+      } else if (nodeType === 'wait') {
+        if (!config?.duration || config.duration <= 0) errors.push('Duration must be greater than 0');
+      } else if (nodeType === 'api') {
+        if (!config?.url) errors.push('URL is required');
+      } else if (nodeType === 'action') {
+        if (!config?.action_type) errors.push('Action type is required');
+        if (config?.action_type === 'award_points' && (!config?.amount || config.amount <= 0)) errors.push('Amount must be greater than 0');
+        if (config?.action_type === 'assign_tag' && !config?.tag_id) errors.push('Tag ID is required');
+        if (config?.action_type === 'send_message') {
+          if (!config?.channel) errors.push('Channel is required');
+          if (!config?.message) errors.push('Message content is required');
+        }
+      } else if (nodeType === 'agent') {
+        if (!config?.campaign_objective) errors.push('Campaign objective is required');
+      }
+
+      setConfigValidationErrors(errors);
+      return errors;
+    };
+
+    const saveConfigEdit = () => {
+      const errors = validateConfig();
+      if (errors.length > 0) {
+        emit('trigger-event', {
+          name: 'validation-failed',
+          event: { errors },
+        });
+        return;
+      }
+
+      const nodeId = editingNodeIdLocal.value;
+      const config = deepClone(editingConfig.value);
+      updateNodeConfig(nodeId, config);
+
+      emit('trigger-event', {
+        name: 'node-config-saved',
+        event: { nodeId, config },
+      });
+
+      closeConfigPanel();
+    };
+
+    const cancelConfigEdit = () => {
+      closeConfigPanel();
+    };
+
     // Computed styles
     const isReadOnly = computed(() => props.content?.readOnly === true);
 
@@ -506,6 +843,7 @@ export default {
         message: props.content?.messageNodeColor || '#10B981',
         wait: props.content?.waitNodeColor || '#F59E0B',
         api: props.content?.apiNodeColor || '#8B5CF6',
+        agent: props.content?.agentNodeColor || '#06B6D4',
       };
       return colors[type] || '#6B7280';
     };
@@ -553,6 +891,11 @@ export default {
           timeout_seconds: 30,
           retry_count: 2,
         },
+        agent: {
+          label: 'New Agent',
+          campaign_objective: '',
+          use_groq: true,
+        },
       };
       return defaults[type] || { label: `New ${type}` };
     };
@@ -584,6 +927,8 @@ export default {
       
       setSelectedNodeId(nodeId);
       setSelectedNodeData(nodeEvent);
+      
+      openConfigPanel(nodeId);
       
       emit('trigger-event', {
         name: 'node-edit',
@@ -1196,6 +1541,7 @@ export default {
         props.content?.messageNodeColor,
         props.content?.waitNodeColor,
         props.content?.apiNodeColor,
+        props.content?.agentNodeColor,
         props.content?.showEditAction,
         props.content?.showDeleteAction,
       ],
@@ -1221,6 +1567,8 @@ export default {
       validate,
       clear,
       updateNodeConfig,
+      openConfigPanel,
+      closeConfigPanel,
     });
 
     /* wwEditor:start */
@@ -1249,6 +1597,22 @@ export default {
       onEdgesChange,
       onKeyDown,
       onPaneReady,
+      configPanelOpen,
+      configPanelStyle,
+      editingConfig,
+      editingNodeType,
+      editingNodeIdLocal,
+      nodeTypeLabels,
+      nodeIconMap,
+      collectionsData,
+      channelsData,
+      messageTemplatesData,
+      configValidationErrorsList,
+      handleConfigUpdate,
+      markConfigChanged,
+      saveConfigEdit,
+      cancelConfigEdit,
+      closeConfigPanel,
       /* wwEditor:start */
       isEditing,
       /* wwEditor:end */
@@ -1272,6 +1636,7 @@ export default {
   overflow: hidden;
   font-family: var(--p-font-family-sans);
   background: var(--p-color-bg-surface-secondary);
+  position: relative;
 }
 
 // Sidebar - Shopify Flow style
@@ -1628,6 +1993,180 @@ export default {
   background: var(--p-color-bg-surface-secondary);
 }
 
+// ============================================
+// Config Panel - right sidebar overlay
+// ============================================
+.config-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: var(--p-color-bg);
+  border-left: 1px solid #E1E3E5;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.08);
+  font-family: var(--p-font-family-sans);
+  overflow: hidden;
+}
+
+.config-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--p-color-bg-surface);
+  border-bottom: 1px solid var(--p-color-border);
+  flex-shrink: 0;
+}
+
+.config-panel__header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.config-panel__icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--p-color-bg-fill);
+  border-radius: 8px;
+  font-size: 18px;
+  flex-shrink: 0;
+
+  &--condition { background: #DBEAFE; }
+  &--message { background: #D1FAE5; }
+  &--wait { background: #FEF3C7; }
+  &--api { background: #EDE9FE; }
+  &--action { background: #FCE7F3; }
+  &--agent { background: #CFFAFE; }
+}
+
+.config-panel__header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.config-panel__type-label {
+  font-size: 12px;
+  color: var(--p-color-text-secondary);
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.config-panel__title-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  outline: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--p-color-text);
+  line-height: 1.4;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.config-panel__close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--p-color-text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--p-color-bg-surface-hover);
+    color: var(--p-color-text);
+  }
+}
+
+.config-panel__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.config-panel__errors {
+  margin-top: 12px;
+  padding: 12px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  color: #991B1B;
+  font-size: 13px;
+
+  ul {
+    margin: 0;
+    padding-left: 16px;
+    list-style: disc;
+  }
+
+  li + li {
+    margin-top: 4px;
+  }
+}
+
+.config-panel__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px;
+  background: var(--p-color-bg-surface);
+  border-top: 1px solid var(--p-color-border);
+  flex-shrink: 0;
+}
+
+.config-panel__btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid var(--p-color-border);
+
+  &--cancel {
+    background: var(--p-color-bg-surface);
+    color: var(--p-color-text);
+
+    &:hover {
+      background: var(--p-color-bg-surface-hover);
+    }
+  }
+
+  &--save {
+    background: #303030;
+    color: #FFFFFF;
+    border-color: #303030;
+
+    &:hover {
+      background: #1A1A1A;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
 // Responsive
 @media (max-width: 768px) {
   .sidebar {
@@ -1636,6 +2175,10 @@ export default {
   
   .workflow-builder {
     grid-template-columns: 1fr;
+  }
+
+  .config-panel {
+    width: 100% !important;
   }
 }
 </style>
