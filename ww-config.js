@@ -17,6 +17,7 @@ export default {
       'agentNodeColor',
     ],
     customSettingsPropertiesOrder: [
+      'workflows',
       'initialWorkflow',
       'initialNodes',
       'initialEdges',
@@ -136,6 +137,44 @@ export default {
       },
       /* wwEditor:end */
     },
+    {
+      name: 'showList',
+      label: { en: 'Show Workflow List' },
+      action: 'showList',
+      /* wwEditor:start */
+      actionDescription: {
+        en: 'Navigates back to the workflow list view',
+      },
+      /* wwEditor:end */
+    },
+    {
+      name: 'createWorkflow',
+      label: { en: 'Create New Workflow' },
+      action: 'createWorkflow',
+      /* wwEditor:start */
+      actionDescription: {
+        en: 'Opens the builder with a blank workflow',
+      },
+      /* wwEditor:end */
+    },
+    {
+      name: 'editWorkflow',
+      label: { en: 'Edit Workflow' },
+      action: 'editWorkflow',
+      args: [
+        {
+          name: 'workflowId',
+          label: { en: 'Workflow ID' },
+          type: 'Text',
+          required: true,
+        },
+      ],
+      /* wwEditor:start */
+      actionDescription: {
+        en: 'Opens the builder for an existing workflow by ID',
+      },
+      /* wwEditor:end */
+    },
   ],
   triggerEvents: [
     {
@@ -237,9 +276,54 @@ export default {
       getTestEvent: '() => ({ is_dirty: false })',
       /* wwEditor:end */
     },
+    {
+      name: 'view-changed',
+      label: { en: 'On View Changed' },
+      event: { view: 'list', mode: '', workflowId: '' },
+      default: true,
+      /* wwEditor:start */
+      getTestEvent: '() => ({ view: "detail", mode: "edit", workflowId: "wf-123" })',
+      /* wwEditor:end */
+    },
+    {
+      name: 'workflow-status-toggled',
+      label: { en: 'On Workflow Status Toggled' },
+      event: { workflowId: '', is_active: false },
+      default: true,
+      /* wwEditor:start */
+      getTestEvent: '() => ({ workflowId: "wf-123", is_active: true })',
+      /* wwEditor:end */
+    },
+    {
+      name: 'create-workflow',
+      label: { en: 'On Create Workflow' },
+      event: {},
+      default: true,
+      /* wwEditor:start */
+      getTestEvent: '() => ({})',
+      /* wwEditor:end */
+    },
   ],
   properties: {
     // ─── Data Binding ────────────────────────────────────────────
+    workflows: {
+      label: { en: 'Workflows List' },
+      type: 'Info',
+      section: 'settings',
+      options: {
+        text: { en: 'Bind workflow list from bff_list_workflows() → data' },
+      },
+      bindable: true,
+      defaultValue: [],
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'array',
+        tooltip: 'Array of workflows: [{id, name, description, is_active, trigger_type, node_count, created_at, updated_at}]',
+      },
+      propertyHelp:
+        'Used by the workflow list view. Bind to bff_list_workflows → data. When empty, shows only the builder (detail) view.',
+      /* wwEditor:end */
+    },
     initialWorkflow: {
       label: { en: 'Workflow Data' },
       type: 'Object',

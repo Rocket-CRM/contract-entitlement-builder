@@ -1,5 +1,17 @@
 <template>
-  <div class="workflow-builder" :style="rootStyle">
+  <div class="workflow-root" :style="rootContainerStyle">
+    <!-- ═══ LIST VIEW ═══ -->
+    <WorkflowList
+      v-if="currentViewLocal === 'list'"
+      :workflows="workflowsData"
+      :loading="workflowsLoading"
+      @select="openWorkflow"
+      @create="createWorkflow"
+      @toggle-status="handleWorkflowStatusToggle"
+    />
+
+    <!-- ═══ DETAIL / BUILDER VIEW ═══ -->
+    <div v-else class="workflow-builder" :style="rootStyle">
     <!-- Toolbar -->
     <div v-if="!isReadOnly" class="toolbar">
       <div class="toolbar__left">
@@ -282,6 +294,7 @@
       :auth-token="authTokenData"
       @close="closeUserList"
     />
+    </div>
   </div>
 </template>
 
@@ -300,6 +313,7 @@ import ApiConfig from './components/ApiConfig.vue';
 import ActionConfig from './components/ActionConfig.vue';
 import AgentConfig from './components/AgentConfig.vue';
 import TriggerConfig from './components/TriggerConfig.vue';
+import WorkflowList from './components/WorkflowList.vue';
 import NodeUserList from './components/NodeUserList.vue';
 import WorkflowSettings from './components/WorkflowSettings.vue';
 import {
@@ -703,6 +717,7 @@ export default {
     ActionConfig,
     AgentConfig,
     TriggerConfig,
+    WorkflowList,
     NodeUserList,
     WorkflowSettings,
     PolarisButton,
@@ -789,6 +804,63 @@ export default {
         ],
       },
     ];
+
+    // ─── List / Detail View ─────────────────────────────────────
+    const { value: currentViewVar, setValue: setCurrentView } =
+      wwLib.wwVariable.useComponentVariable({
+        uid: props.uid,
+        name: 'currentView',
+        type: 'string',
+        defaultValue: 'list',
+      });
+
+    const workflowsData = computed(() => props.content?.workflows || []);
+    const hasWorkflowsList = computed(() => props.content?.workflows != null);
+    const workflowsLoading = ref(false);
+    const currentViewLocal = ref(hasWorkflowsList.value ? 'list' : 'detail');
+
+    const rootContainerStyle = computed(() => ({
+      width: '100%',
+      height: '100%',
+      minHeight: '500px',
+    }));
+
+    const openWorkflow = (workflow) => {
+      workflowMeta.value = { ...workflow };
+      currentViewLocal.value = 'detail';
+      setCurrentView('detail');
+      emit('trigger-event', {
+        name: 'view-changed',
+        event: { view: 'detail', mode: 'edit', workflowId: workflow?.id },
+      });
+    };
+
+    const createWorkflow = () => {
+      workflowMeta.value = {};
+      currentViewLocal.value = 'detail';
+      setCurrentView('detail');
+      emit('trigger-event', {
+        name: 'view-changed',
+        event: { view: 'detail', mode: 'create' },
+      });
+      emit('trigger-event', { name: 'create-workflow', event: {} });
+    };
+
+    const goBackToList = () => {
+      currentViewLocal.value = 'list';
+      setCurrentView('list');
+      emit('trigger-event', {
+        name: 'view-changed',
+        event: { view: 'list' },
+      });
+    };
+
+    const handleWorkflowStatusToggle = (workflow, isActive) => {
+      emit('trigger-event', {
+        name: 'workflow-status-toggled',
+        event: { workflowId: workflow?.id, is_active: isActive },
+      });
+    };
 
     // Workflow metadata from props
     const workflowMeta = ref({});
@@ -1269,10 +1341,14 @@ export default {
     };
 
     const handleExit = () => {
-      emit('trigger-event', {
-        name: 'exit',
-        event: { is_dirty: isDirty.value },
-      });
+      if (hasWorkflowsList.value) {
+        goBackToList();
+      } else {
+        emit('trigger-event', {
+          name: 'exit',
+          event: { is_dirty: isDirty.value },
+        });
+      }
     };
 
     // ─── Node Stats + User List ──────────────────────────────────
@@ -2120,6 +2196,14 @@ export default {
       closeConfigPanel,
       openStatusPanel,
       closeStatusPanel,
+      showList: goBackToList,
+      createWorkflow,
+      editWorkflow: (args) => {
+        const wfId = args?.workflowId;
+        if (!wfId) return;
+        const wf = workflowsData.value.find(w => w?.id === wfId);
+        if (wf) openWorkflow(wf);
+      },
     });
 
     /* wwEditor:start */
@@ -2127,6 +2211,14 @@ export default {
     /* wwEditor:end */
 
     return {
+      currentViewLocal,
+      workflowsData,
+      workflowsLoading,
+      rootContainerStyle,
+      openWorkflow,
+      createWorkflow,
+      goBackToList,
+      handleWorkflowStatusToggle,
       canvasRef,
       vueFlowRef,
       nodes,
@@ -2208,7 +2300,13 @@ export default {
 <style scoped lang="scss">
 @import 'polaris-weweb-styles';
 
-// Root element with Polaris tokens
+.workflow-root {
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+  position: relative;
+}
+
 .workflow-builder {
   @include polaris-tokens;
   display: grid !important;
