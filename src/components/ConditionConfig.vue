@@ -1,77 +1,72 @@
 <template>
-  <div class="polaris-card">
-    <div class="polaris-card__section">
+  <PolarisCard>
+    <PolarisCardSection>
       <!-- Header -->
-      <div class="polaris-inline polaris-inline--space-between">
-        <span class="polaris-text polaris-text--heading-sm">Condition Builder</span>
-        <div class="polaris-button-group polaris-button-group--segmented polaris-button-group--small">
-          <button
-            class="polaris-button polaris-button--segmented"
-            :class="{ 'polaris-button--segmented-selected': config?.match === 'all' }"
+      <PolarisInline gap="200" blockAlign="center" align="space-between">
+        <PolarisText variant="headingSm">Condition Builder</PolarisText>
+        <PolarisButtonGroup segmented>
+          <PolarisButton
+            :pressed="config?.match === 'all'"
             @click="emitUpdate({ ...config, match: 'all' })"
-          >All (AND)</button>
-          <button
-            class="polaris-button polaris-button--segmented"
-            :class="{ 'polaris-button--segmented-selected': config?.match === 'any' }"
+            size="slim"
+          >All (AND)</PolarisButton>
+          <PolarisButton
+            :pressed="config?.match === 'any'"
             @click="emitUpdate({ ...config, match: 'any' })"
-          >Any (OR)</button>
-        </div>
-      </div>
+            size="slim"
+          >Any (OR)</PolarisButton>
+        </PolarisButtonGroup>
+      </PolarisInline>
 
       <!-- Groups -->
       <div class="polaris-condition-list" v-if="config?.groups?.length">
-        <div
+        <PolarisCard
           v-for="(group, gIdx) in config.groups"
           :key="group?.id || gIdx"
-          class="polaris-card polaris-card--subdued"
+          subdued
         >
-          <div class="polaris-card__section">
+          <PolarisCardSection>
             <!-- Group header -->
-            <div class="polaris-inline polaris-inline--space-between">
-              <span class="polaris-text polaris-text--body-md">Group {{ gIdx + 1 }}</span>
-              <div class="polaris-inline polaris-inline--gap-tight">
-                <button
-                  class="polaris-button polaris-button--plain"
-                  :class="{ 'polaris-button--segmented-selected': group?.operator === 'AND' }"
-                  @click="updateGroupOperator(group.id, 'AND')"
-                >AND</button>
-                <button
-                  class="polaris-button polaris-button--plain"
-                  :class="{ 'polaris-button--segmented-selected': group?.operator === 'OR' }"
-                  @click="updateGroupOperator(group.id, 'OR')"
-                >OR</button>
-                <button
-                  class="polaris-button polaris-button--plain polaris-button--critical polaris-button--icon-only"
-                  @click="removeGroup(group.id)"
-                > ✕ </button>
-              </div>
-            </div>
+            <PolarisInline gap="200" blockAlign="center" align="space-between">
+              <PolarisText variant="bodyMd">Group {{ gIdx + 1 }}</PolarisText>
+              <PolarisInline gap="200">
+                <PolarisButtonGroup segmented>
+                  <PolarisButton
+                    :pressed="group?.operator === 'AND'"
+                    @click="updateGroupOperator(group.id, 'AND')"
+                    size="slim"
+                  >AND</PolarisButton>
+                  <PolarisButton
+                    :pressed="group?.operator === 'OR'"
+                    @click="updateGroupOperator(group.id, 'OR')"
+                    size="slim"
+                  >OR</PolarisButton>
+                </PolarisButtonGroup>
+                <PolarisButton variant="plain" icon="close" iconOnly @click="removeGroup(group.id)" />
+              </PolarisInline>
+            </PolarisInline>
 
             <!-- Collection select -->
-            <div class="polaris-text-field">
-              <label class="polaris-text-field__label">Collection</label>
-              <select
-                class="polaris-select__input"
-                :value="group?.collection || ''"
-                @change="updateGroupCollection(group.id, $event.target.value)"
-              >
-                <option value="" disabled>Select collection...</option>
-                <option v-for="col in safeCollections" :key="col?.name" :value="col?.name">{{ col?.label || col?.name }}</option>
-              </select>
-            </div>
+            <PolarisSelect
+              label="Collection"
+              :modelValue="group?.collection || ''"
+              @update:modelValue="updateGroupCollection(group.id, $event)"
+              :options="collectionOptions"
+              placeholder="Select collection..."
+            />
 
             <!-- Mode toggle (only if collection supports aggregate) -->
             <div v-if="collectionSupportsAggregate(group?.collection)" class="condition-mode-toggle">
-              <button
-                class="polaris-button polaris-button--segmented"
-                :class="{ 'polaris-button--segmented-selected': getGroupType(group) === 'simple' }"
-                @click="updateGroupType(group.id, 'simple')"
-              >Check single record</button>
-              <button
-                class="polaris-button polaris-button--segmented"
-                :class="{ 'polaris-button--segmented-selected': getGroupType(group) === 'aggregate' }"
-                @click="updateGroupType(group.id, 'aggregate')"
-              >Check aggregate</button>
+              <PolarisButtonGroup segmented>
+                <PolarisButton
+                  :pressed="getGroupType(group) === 'simple'"
+                  @click="updateGroupType(group.id, 'simple')"
+                >Check single record</PolarisButton>
+                <PolarisButton
+                  :pressed="getGroupType(group) === 'aggregate'"
+                  @click="updateGroupType(group.id, 'aggregate')"
+                >Check aggregate</PolarisButton>
+              </PolarisButtonGroup>
             </div>
 
             <!-- ═══ SIMPLE MODE ═══ -->
@@ -80,184 +75,174 @@
                 <template v-for="(condition, cIdx) in (group?.conditions || [])" :key="condition?.id || cIdx">
                   <div class="polaris-condition-item">
                     <div v-if="cIdx > 0" class="polaris-condition-operator">
-                      <span class="polaris-text polaris-text--body-md">{{ group?.operator || 'AND' }}</span>
+                      <PolarisText variant="bodyMd">{{ group?.operator || 'AND' }}</PolarisText>
                     </div>
 
                     <div class="polaris-condition-fields">
-                      <div class="polaris-text-field polaris-text-field--flex">
-                        <label class="polaris-text-field__label">Field</label>
-                        <select
-                          class="polaris-select__input"
-                          :value="condition?.field || ''"
-                          @change="updateConditionField(group.id, condition.id, $event.target.value)"
-                        >
-                          <option value="" disabled>Select field...</option>
-                          <option v-for="f in getFieldsForCollection(group?.collection)" :key="f?.name" :value="f?.name">{{ f?.label || f?.name }}</option>
-                        </select>
-                      </div>
-
-                      <div class="polaris-text-field polaris-text-field--operator">
-                        <label class="polaris-text-field__label">Operator</label>
-                        <select
-                          class="polaris-select__input"
-                          :value="condition?.operator || 'equals'"
-                          @change="updateConditionOperator(group.id, condition.id, $event.target.value)"
-                        >
-                          <option v-for="op in getOperatorsForField(group?.collection, condition?.field)" :key="op?.value" :value="op?.value">{{ op?.label }}</option>
-                        </select>
-                      </div>
-
-                      <div class="polaris-text-field polaris-text-field--flex" v-if="isValueRequired(condition?.operator)">
-                        <label class="polaris-text-field__label">Value</label>
-                        <input
-                          class="polaris-text-field__input"
-                          :value="condition?.value || ''"
-                          @input="updateConditionValue(group.id, condition.id, $event.target.value)"
+                      <div style="flex: 1;">
+                        <PolarisSelect
+                          label="Field"
+                          size="small"
+                          :modelValue="condition?.field || ''"
+                          @update:modelValue="updateConditionField(group.id, condition.id, $event)"
+                          :options="getFieldOptions(group?.collection)"
+                          placeholder="Select field..."
                         />
                       </div>
 
-                      <button
-                        class="polaris-button polaris-button--plain polaris-button--critical polaris-button--icon-only"
-                        @click="removeCondition(group.id, condition.id)"
-                      > ✕ </button>
+                      <div style="width: 120px; flex-shrink: 0;">
+                        <PolarisSelect
+                          label="Operator"
+                          size="small"
+                          :modelValue="condition?.operator || 'equals'"
+                          @update:modelValue="updateConditionOperator(group.id, condition.id, $event)"
+                          :options="getOperatorOptions(group?.collection, condition?.field)"
+                        />
+                      </div>
+
+                      <div v-if="isValueRequired(condition?.operator)" style="flex: 1;">
+                        <PolarisTextField
+                          label="Value"
+                          :modelValue="condition?.value || ''"
+                          @update:modelValue="updateConditionValue(group.id, condition.id, $event)"
+                        />
+                      </div>
+
+                      <PolarisButton variant="plain" icon="close" iconOnly @click="removeCondition(group.id, condition.id)" />
                     </div>
                   </div>
                 </template>
               </div>
 
-              <button class="polaris-button polaris-button--plain polaris-button--full-width" @click="addCondition(group.id)">
+              <PolarisButton variant="plain" fullWidth @click="addCondition(group.id)">
                 + Add Condition
-              </button>
+              </PolarisButton>
             </template>
 
             <!-- ═══ AGGREGATE MODE ═══ -->
             <template v-if="getGroupType(group) === 'aggregate'">
               <!-- Function + Field -->
               <div class="polaris-condition-fields">
-                <div class="polaris-text-field polaris-text-field--flex">
-                  <label class="polaris-text-field__label">Function</label>
-                  <select
-                    class="polaris-select__input"
-                    :value="group?.aggregate || 'sum'"
-                    @change="updateGroupField(group.id, 'aggregate', $event.target.value)"
-                  >
-                    <option v-for="fn in AGGREGATE_FUNCTIONS" :key="fn.value" :value="fn.value">{{ fn.label }}</option>
-                  </select>
+                <div style="flex: 1;">
+                  <PolarisSelect
+                    label="Function"
+                    :modelValue="group?.aggregate || 'sum'"
+                    @update:modelValue="updateGroupField(group.id, 'aggregate', $event)"
+                    :options="aggregateFunctionOptions"
+                  />
                 </div>
-                <div class="polaris-text-field polaris-text-field--flex">
-                  <label class="polaris-text-field__label">Field</label>
-                  <select
-                    class="polaris-select__input"
-                    :value="group?.field || ''"
-                    @change="updateGroupField(group.id, 'field', $event.target.value)"
-                  >
-                    <option value="" disabled>Select field...</option>
-                    <option
-                      v-for="f in getAggregateFields(group?.collection)"
-                      :key="f?.name"
-                      :value="f?.name"
-                    >{{ f?.label || f?.name }}</option>
-                  </select>
+                <div style="flex: 1;">
+                  <PolarisSelect
+                    label="Field"
+                    :modelValue="group?.field || ''"
+                    @update:modelValue="updateGroupField(group.id, 'field', $event)"
+                    :options="getAggFieldOptions(group?.collection)"
+                    placeholder="Select field..."
+                  />
                 </div>
               </div>
 
               <!-- Filters -->
               <div class="aggregate-section">
-                <label class="polaris-text-field__label">Filters (optional)</label>
+                <span class="aggregate-section__label">Filters (optional)</span>
                 <div class="polaris-condition-list" v-if="group?.filters?.length">
                   <div
                     v-for="(filter, fIdx) in group.filters"
                     :key="filter?.id || fIdx"
                     class="polaris-condition-fields"
                   >
-                    <div class="polaris-text-field polaris-text-field--flex">
-                      <select
-                        class="polaris-select__input"
-                        :value="filter?.field || ''"
-                        @change="updateAggFilter(group.id, filter.id, 'field', $event.target.value)"
-                      >
-                        <option value="" disabled>Field...</option>
-                        <option v-for="f in getFieldsForCollection(group?.collection)" :key="f?.name" :value="f?.name">{{ f?.label || f?.name }}</option>
-                      </select>
-                    </div>
-                    <div class="polaris-text-field polaris-text-field--operator">
-                      <select
-                        class="polaris-select__input"
-                        :value="filter?.operator || 'equals'"
-                        @change="updateAggFilter(group.id, filter.id, 'operator', $event.target.value)"
-                      >
-                        <option v-for="op in getOperatorsForField(group?.collection, filter?.field)" :key="op?.value" :value="op?.value">{{ op?.label }}</option>
-                      </select>
-                    </div>
-                    <div class="polaris-text-field polaris-text-field--flex" v-if="isValueRequired(filter?.operator)">
-                      <input
-                        class="polaris-text-field__input"
-                        :value="filter?.value || ''"
-                        @input="updateAggFilter(group.id, filter.id, 'value', $event.target.value)"
+                    <div style="flex: 1;">
+                      <PolarisSelect
+                        labelHidden
+                        label="Field"
+                        size="small"
+                        :modelValue="filter?.field || ''"
+                        @update:modelValue="updateAggFilter(group.id, filter.id, 'field', $event)"
+                        :options="getFieldOptions(group?.collection)"
+                        placeholder="Field..."
                       />
                     </div>
-                    <button
-                      class="polaris-button polaris-button--plain polaris-button--critical polaris-button--icon-only"
-                      @click="removeAggFilter(group.id, filter.id)"
-                    > ✕ </button>
+                    <div style="width: 120px; flex-shrink: 0;">
+                      <PolarisSelect
+                        labelHidden
+                        label="Operator"
+                        size="small"
+                        :modelValue="filter?.operator || 'equals'"
+                        @update:modelValue="updateAggFilter(group.id, filter.id, 'operator', $event)"
+                        :options="getOperatorOptions(group?.collection, filter?.field)"
+                      />
+                    </div>
+                    <div v-if="isValueRequired(filter?.operator)" style="flex: 1;">
+                      <PolarisTextField
+                        labelHidden
+                        label="Value"
+                        :modelValue="filter?.value || ''"
+                        @update:modelValue="updateAggFilter(group.id, filter.id, 'value', $event)"
+                      />
+                    </div>
+                    <PolarisButton variant="plain" icon="close" iconOnly @click="removeAggFilter(group.id, filter.id)" />
                   </div>
                 </div>
-                <button class="polaris-button polaris-button--plain" @click="addAggFilter(group.id)">+ Add Filter</button>
+                <PolarisButton variant="plain" @click="addAggFilter(group.id)">+ Add Filter</PolarisButton>
               </div>
 
               <!-- Time range -->
-              <div class="polaris-text-field">
-                <label class="polaris-text-field__label">Time range</label>
-                <select
-                  class="polaris-select__input"
-                  :value="group?.time_range || ''"
-                  @change="updateGroupField(group.id, 'time_range', $event.target.value || null)"
-                >
-                  <option v-for="tr in TIME_RANGES" :key="tr.value" :value="tr.value || ''">{{ tr.label }}</option>
-                </select>
-              </div>
+              <PolarisSelect
+                label="Time range"
+                :modelValue="group?.time_range || ''"
+                @update:modelValue="updateGroupField(group.id, 'time_range', $event || null)"
+                :options="timeRangeOptions"
+              />
 
               <!-- Threshold -->
               <div class="polaris-condition-fields">
-                <div class="polaris-text-field polaris-text-field--operator">
-                  <label class="polaris-text-field__label">Threshold</label>
-                  <select
-                    class="polaris-select__input"
-                    :value="group?.operator || 'gte'"
-                    @change="updateGroupField(group.id, 'operator', $event.target.value)"
-                  >
-                    <option v-for="op in THRESHOLD_OPERATORS" :key="op.value" :value="op.value">{{ op.label }}</option>
-                  </select>
+                <div style="width: 120px; flex-shrink: 0;">
+                  <PolarisSelect
+                    label="Threshold"
+                    :modelValue="group?.operator || 'gte'"
+                    @update:modelValue="updateGroupField(group.id, 'operator', $event)"
+                    :options="thresholdOperatorOptions"
+                  />
                 </div>
-                <div class="polaris-text-field polaris-text-field--flex">
-                  <label class="polaris-text-field__label">Value</label>
-                  <input
-                    class="polaris-text-field__input"
+                <div style="flex: 1;">
+                  <PolarisTextField
+                    label="Value"
                     type="number"
-                    :value="group?.value || ''"
-                    @input="updateGroupField(group.id, 'value', parseFloat($event.target.value) || 0)"
+                    :modelValue="group?.value || ''"
+                    @update:modelValue="updateGroupField(group.id, 'value', parseFloat($event) || 0)"
                   />
                 </div>
               </div>
             </template>
-          </div>
-        </div>
+          </PolarisCardSection>
+        </PolarisCard>
       </div>
 
       <!-- Empty state -->
-      <div v-else class="polaris-text polaris-text--body-md" style="text-align: center; padding: 12px 0; color: var(--p-color-text-secondary);">
+      <div v-else class="empty-state">
         No condition groups yet
       </div>
 
-      <button class="polaris-button polaris-button--outline polaris-button--full-width" style="margin-top: var(--p-space-300);" @click="addGroup">
+      <PolarisButton variant="outline" fullWidth @click="addGroup" style="margin-top: var(--p-space-300);">
         + Add Group
-      </button>
-    </div>
-  </div>
+      </PolarisButton>
+    </PolarisCardSection>
+  </PolarisCard>
 </template>
 
 <script>
 import { computed } from 'vue';
+import {
+  PolarisCard,
+  PolarisCardSection,
+  PolarisBlockStack,
+  PolarisInline,
+  PolarisTextField,
+  PolarisSelect,
+  PolarisButton,
+  PolarisButtonGroup,
+  PolarisText,
+} from 'polaris-weweb-styles/components';
 
 const OPERATORS_BY_TYPE = {
   string: [
@@ -326,6 +311,17 @@ const THRESHOLD_OPERATORS = [
 
 export default {
   name: 'ConditionConfig',
+  components: {
+    PolarisCard,
+    PolarisCardSection,
+    PolarisBlockStack,
+    PolarisInline,
+    PolarisTextField,
+    PolarisSelect,
+    PolarisButton,
+    PolarisButtonGroup,
+    PolarisText,
+  },
   props: {
     config: { type: Object, required: true },
     collections: { type: Array, default: () => [] },
@@ -335,6 +331,17 @@ export default {
     const safeCollections = computed(() => {
       return Array.isArray(props.collections) ? props.collections : [];
     });
+
+    const collectionOptions = computed(() => {
+      return safeCollections.value.map(col => ({
+        value: col?.name,
+        label: col?.label || col?.name,
+      }));
+    });
+
+    const aggregateFunctionOptions = AGGREGATE_FUNCTIONS;
+    const timeRangeOptions = TIME_RANGES;
+    const thresholdOperatorOptions = THRESHOLD_OPERATORS;
 
     const emitUpdate = (newConfig) => {
       emit('update', newConfig);
@@ -369,6 +376,24 @@ export default {
     const getOperatorsForField = (collectionName, fieldName) => {
       const fieldType = getFieldType(collectionName, fieldName);
       return OPERATORS_BY_TYPE[fieldType] || OPERATORS_BY_TYPE.string;
+    };
+
+    const getFieldOptions = (collectionName) => {
+      return getFieldsForCollection(collectionName).map(f => ({
+        value: f?.name,
+        label: f?.label || f?.name,
+      }));
+    };
+
+    const getOperatorOptions = (collectionName, fieldName) => {
+      return getOperatorsForField(collectionName, fieldName);
+    };
+
+    const getAggFieldOptions = (collectionName) => {
+      return getAggregateFields(collectionName).map(f => ({
+        value: f?.name,
+        label: f?.label || f?.name,
+      }));
     };
 
     const isValueRequired = (operator) => {
@@ -611,16 +636,16 @@ export default {
     };
 
     return {
-      safeCollections,
-      AGGREGATE_FUNCTIONS,
-      TIME_RANGES,
-      THRESHOLD_OPERATORS,
+      collectionOptions,
+      aggregateFunctionOptions,
+      timeRangeOptions,
+      thresholdOperatorOptions,
       emitUpdate,
       getGroupType,
       collectionSupportsAggregate,
-      getFieldsForCollection,
-      getAggregateFields,
-      getOperatorsForField,
+      getFieldOptions,
+      getAggFieldOptions,
+      getOperatorOptions,
       isValueRequired,
       addGroup,
       removeGroup,
@@ -644,90 +669,8 @@ export default {
 <style lang="scss" scoped>
 @import 'polaris-weweb-styles';
 
-// All text uses Polaris type scale:
-// Labels: 13px (--p-font-size-300)
-// Body: 13px (--p-font-size-300)
-// Headings: 14px (--p-font-size-325) semibold
-// Group headers: 13px (--p-font-size-300) regular
-
-.polaris-card {
-  @include polaris-tokens;
-  @include polaris-card;
-  &--subdued {
-    background: var(--p-color-bg-surface-secondary);
-    box-shadow: none;
-    border: 1px solid var(--p-color-border);
-  }
-  &__section { @include polaris-card-section; }
-}
-
-.polaris-inline {
-  @include polaris-inline;
-  &--space-between { justify-content: space-between; }
-  &--gap-tight { gap: var(--p-space-200); }
-}
-
-.polaris-text {
-  &--body-md {
-    font-size: var(--p-font-size-300);
-    color: var(--p-color-text);
-  }
-  &--heading-sm {
-    font-size: var(--p-font-size-325);
-    font-weight: var(--p-font-weight-semibold);
-    color: var(--p-color-text);
-  }
-}
-
-.polaris-button {
-  @include polaris-button-base;
-  font-size: var(--p-font-size-300);
-  &--plain { @include polaris-button-plain; font-size: var(--p-font-size-300); }
-  &--critical { color: var(--p-color-text-critical); }
-  &--outline { @include polaris-button-outline; font-size: var(--p-font-size-300); }
-  &--icon-only { @include polaris-button-icon-only; }
-  &--full-width { @include polaris-button-full-width; }
-  &--slim { @include polaris-button-slim; }
-  &--segmented {
-    border-radius: 0;
-    background: var(--p-color-bg-surface);
-    color: var(--p-color-text);
-    box-shadow: inset 0 0 0 1px var(--p-color-border);
-    font-size: var(--p-font-size-300);
-    &:first-child { border-radius: var(--p-border-radius-200) 0 0 var(--p-border-radius-200); }
-    &:last-child { border-radius: 0 var(--p-border-radius-200) var(--p-border-radius-200) 0; }
-  }
-  &--segmented-selected {
-    background: var(--p-color-bg-surface-selected);
-    color: var(--p-color-text-brand);
-    box-shadow: inset 0 0 0 2px var(--p-color-border-brand);
-  }
-}
-
-.polaris-button-group {
-  @include polaris-button-group;
-  &--segmented { @include polaris-button-group-segmented; }
-  &--small .polaris-button { @include polaris-button-slim; }
-}
-
-.polaris-text-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--p-space-100);
-  &--flex { flex: 1; }
-  &--operator { width: 120px; flex-shrink: 0; }
-}
-
-.polaris-text-field__label {
-  font-size: var(--p-font-size-300);
-  font-weight: var(--p-font-weight-medium);
-  color: var(--p-color-text);
-}
-
-.polaris-text-field__input { @include polaris-input; font-size: var(--p-font-size-300); }
-.polaris-select__input { @include polaris-select; font-size: var(--p-font-size-300); }
-
 .polaris-condition-list {
+  @include polaris-tokens;
   display: flex;
   flex-direction: column;
   gap: var(--p-space-200);
@@ -754,14 +697,7 @@ export default {
 }
 
 .condition-mode-toggle {
-  display: flex;
   margin-top: var(--p-space-300);
-
-  .polaris-button--segmented {
-    flex: 1;
-    justify-content: center;
-    font-size: var(--p-font-size-275);
-  }
 }
 
 .aggregate-section {
@@ -770,12 +706,22 @@ export default {
   gap: var(--p-space-200);
   margin-top: var(--p-space-300);
 
+  &__label {
+    font-size: var(--p-font-size-300);
+    font-weight: var(--p-font-weight-medium);
+    color: var(--p-color-text);
+  }
+
   .polaris-condition-list {
     margin-top: var(--p-space-100);
   }
 }
 
-.polaris-card + .polaris-card { margin-top: var(--p-space-300); }
-.polaris-card--subdued + .polaris-card--subdued { margin-top: var(--p-space-300); }
-.polaris-text-field + .polaris-text-field { margin-top: var(--p-space-200); }
+.empty-state {
+  @include polaris-tokens;
+  text-align: center;
+  padding: 12px 0;
+  color: var(--p-color-text-secondary);
+  font-size: var(--p-font-size-300);
+}
 </style>

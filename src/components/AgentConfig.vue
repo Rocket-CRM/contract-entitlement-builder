@@ -1,21 +1,23 @@
 <template>
   <div class="agent-config">
     <!-- Objective -->
-    <div class="polaris-form-field">
-      <label class="polaris-form-field__label polaris-form-field__label--required">Objective</label>
-      <select class="polaris-form-field__select" :value="config?.objective || ''" @change="updateField('objective', $event.target.value)">
-        <option value="" disabled>Select objective...</option>
-        <option v-for="o in OBJECTIVES" :key="o.value" :value="o.value" :title="o.tooltip">{{ o.label }}</option>
-      </select>
-    </div>
+    <PolarisSelect
+      label="Objective"
+      required
+      :modelValue="config?.objective || ''"
+      @update:modelValue="updateField('objective', $event)"
+      :options="objectiveOptions"
+      placeholder="Select objective..."
+    />
 
     <!-- Tone -->
-    <div class="polaris-form-field">
-      <label class="polaris-form-field__label polaris-form-field__label--required">Tone</label>
-      <select class="polaris-form-field__select" :value="config?.tone || 'friendly'" @change="updateField('tone', $event.target.value)">
-        <option v-for="t in TONES" :key="t.value" :value="t.value" :title="t.tooltip">{{ t.label }}</option>
-      </select>
-    </div>
+    <PolarisSelect
+      label="Tone"
+      required
+      :modelValue="config?.tone || 'friendly'"
+      @update:modelValue="updateField('tone', $event)"
+      :options="toneOptions"
+    />
 
     <!-- Allowed Actions -->
     <div class="polaris-form-field">
@@ -34,31 +36,25 @@
     </div>
 
     <!-- Limits -->
-    <div class="polaris-form-field">
-      <label class="polaris-form-field__label">Max Points Per User</label>
-      <input
-        class="polaris-form-field__input"
-        type="number"
-        min="0"
-        placeholder="No limit"
-        :value="config?.max_points_per_user ?? ''"
-        @input="updateField('max_points_per_user', $event.target.value ? parseInt($event.target.value) : null)"
-      />
-      <span class="polaris-form-field__help">Leave empty for no limit</span>
-    </div>
+    <PolarisTextField
+      label="Max Points Per User"
+      type="number"
+      :min="0"
+      placeholder="No limit"
+      :modelValue="config?.max_points_per_user ?? ''"
+      @update:modelValue="updateField('max_points_per_user', $event ? parseInt($event) : null)"
+      helpText="Leave empty for no limit"
+    />
 
-    <div class="polaris-form-field">
-      <label class="polaris-form-field__label">Max Actions Per Execution</label>
-      <input
-        class="polaris-form-field__input"
-        type="number"
-        min="1"
-        placeholder="No limit"
-        :value="config?.max_actions ?? ''"
-        @input="updateField('max_actions', $event.target.value ? parseInt($event.target.value) : null)"
-      />
-      <span class="polaris-form-field__help">How many actions the AI can take in a single run</span>
-    </div>
+    <PolarisTextField
+      label="Max Actions Per Execution"
+      type="number"
+      :min="1"
+      placeholder="No limit"
+      :modelValue="config?.max_actions ?? ''"
+      @update:modelValue="updateField('max_actions', $event ? parseInt($event) : null)"
+      helpText="How many actions the AI can take in a single run"
+    />
 
     <!-- Constraints -->
     <div class="polaris-form-field">
@@ -71,17 +67,15 @@
     </div>
 
     <!-- Context Hint -->
-    <div class="polaris-form-field">
-      <label class="polaris-form-field__label">Context Hint</label>
-      <textarea
-        class="polaris-form-field__textarea"
-        rows="3"
-        placeholder="e.g., These are lapsed VIP customers who used to spend heavily"
-        :value="config?.context_hint || ''"
-        @input="updateField('context_hint', $event.target.value)"
-      />
-      <span class="polaris-form-field__help">Additional context passed to the AI to improve decisions</span>
-    </div>
+    <PolarisTextField
+      label="Context Hint"
+      multiline
+      :rows="3"
+      placeholder="e.g., These are lapsed VIP customers who used to spend heavily"
+      :modelValue="config?.context_hint || ''"
+      @update:modelValue="updateField('context_hint', $event)"
+      helpText="Additional context passed to the AI to improve decisions"
+    />
 
     <!-- Output Variables Reference -->
     <div class="variable-ref">
@@ -102,21 +96,25 @@
 <script>
 import { ref } from 'vue';
 import ConstraintBuilder from './ConstraintBuilder.vue';
+import {
+  PolarisTextField,
+  PolarisSelect,
+} from 'polaris-weweb-styles/components';
 
 const OBJECTIVES = [
-  { value: 're_engage', label: 'Re-engage', tooltip: 'Bring back inactive users' },
-  { value: 'drive_purchase', label: 'Drive Purchase', tooltip: 'Encourage next purchase' },
-  { value: 'redeem_points', label: 'Redeem Points', tooltip: 'Get users to spend idle points' },
-  { value: 'tier_upgrade', label: 'Tier Upgrade', tooltip: 'Push users toward next tier' },
-  { value: 'win_back', label: 'Win Back', tooltip: 'Recover churned users' },
-  { value: 'upsell', label: 'Upsell', tooltip: 'Increase basket size' },
+  { value: 're_engage', label: 'Re-engage' },
+  { value: 'drive_purchase', label: 'Drive Purchase' },
+  { value: 'redeem_points', label: 'Redeem Points' },
+  { value: 'tier_upgrade', label: 'Tier Upgrade' },
+  { value: 'win_back', label: 'Win Back' },
+  { value: 'upsell', label: 'Upsell' },
 ];
 
 const TONES = [
-  { value: 'urgent', label: 'Urgent', tooltip: 'Time-limited, scarcity messaging' },
-  { value: 'friendly', label: 'Friendly', tooltip: 'Warm, conversational' },
-  { value: 'exclusive', label: 'Exclusive', tooltip: 'VIP, premium feel' },
-  { value: 'celebratory', label: 'Celebratory', tooltip: 'Achievement, reward celebration' },
+  { value: 'urgent', label: 'Urgent' },
+  { value: 'friendly', label: 'Friendly' },
+  { value: 'exclusive', label: 'Exclusive' },
+  { value: 'celebratory', label: 'Celebratory' },
 ];
 
 const ALLOWED_ACTIONS = [
@@ -140,13 +138,16 @@ const AGENT_VARS = [
 
 export default {
   name: 'AgentConfig',
-  components: { ConstraintBuilder },
+  components: { ConstraintBuilder, PolarisTextField, PolarisSelect },
   props: {
     config: { type: Object, required: true },
   },
   emits: ['update'],
   setup(props, { emit }) {
     const showVars = ref(false);
+
+    const objectiveOptions = OBJECTIVES;
+    const toneOptions = TONES;
 
     const updateField = (field, value) => {
       emit('update', { ...props.config, [field]: value });
@@ -175,7 +176,8 @@ export default {
     };
 
     return {
-      OBJECTIVES, TONES, ALLOWED_ACTIONS, AGENT_VARS,
+      ALLOWED_ACTIONS, AGENT_VARS,
+      objectiveOptions, toneOptions,
       showVars, updateField, isActionAllowed, toggleAction,
     };
   },
@@ -192,6 +194,7 @@ export default {
   gap: var(--p-space-400);
 }
 
+// Custom patterns: checkbox group, variable ref
 .polaris-form-field {
   display: flex;
   flex-direction: column;
@@ -201,12 +204,8 @@ export default {
     font-size: var(--p-font-size-300);
     font-weight: var(--p-font-weight-medium);
     color: var(--p-color-text);
-    &--required::after { content: ' *'; color: var(--p-color-text-critical); }
   }
 
-  &__input { @include polaris-input; font-size: var(--p-font-size-300); }
-  &__select { @include polaris-select; font-size: var(--p-font-size-300); }
-  &__textarea { @include polaris-textarea; font-size: var(--p-font-size-300); }
   &__help { @include polaris-help-text; }
 }
 

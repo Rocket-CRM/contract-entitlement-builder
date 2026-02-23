@@ -8,19 +8,14 @@
 
     <template v-else>
       <!-- Action Type Selector -->
-      <div class="polaris-form-field">
-        <label class="polaris-form-field__label polaris-form-field__label--required">Action Type</label>
-        <select
-          class="polaris-form-field__select"
-          :value="config?.action_type || config?.channel || ''"
-          @change="handleActionTypeChange($event.target.value)"
-        >
-          <option value="" disabled>Select action...</option>
-          <optgroup v-for="group in ACTION_GROUPS" :key="group.label" :label="group.label">
-            <option v-for="action in group.actions" :key="action.value" :value="action.value">{{ action.label }}</option>
-          </optgroup>
-        </select>
-      </div>
+      <PolarisSelect
+        label="Action Type"
+        required
+        :modelValue="config?.action_type || config?.channel || ''"
+        @update:modelValue="handleActionTypeChange($event)"
+        :options="actionTypeOptions"
+        placeholder="Select action..."
+      />
 
       <!-- ═══ AWARD CURRENCY ═══ -->
       <template v-if="config?.action_type === 'award_currency'">
@@ -40,119 +35,90 @@
           </div>
         </div>
 
-        <div v-if="config?.currency === 'ticket'" class="polaris-form-field">
-          <label class="polaris-form-field__label polaris-form-field__label--required">Ticket Type</label>
-          <select
-            class="polaris-form-field__select"
-            :value="config?.ticket_type_id || ''"
-            @change="updateField('ticket_type_id', $event.target.value)"
-          >
-            <option value="" disabled>Select ticket type...</option>
-            <option v-for="t in ticketTypes" :key="t?.id" :value="t?.id">{{ t?.name }}{{ t?.description ? ` — ${t.description}` : '' }}</option>
-          </select>
-        </div>
+        <PolarisSelect
+          v-if="config?.currency === 'ticket'"
+          label="Ticket Type"
+          required
+          :modelValue="config?.ticket_type_id || ''"
+          @update:modelValue="updateField('ticket_type_id', $event)"
+          :options="ticketTypeOptions"
+          placeholder="Select ticket type..."
+        />
 
-        <div class="polaris-form-field">
-          <label class="polaris-form-field__label polaris-form-field__label--required">Amount</label>
-          <input
-            class="polaris-form-field__input"
-            type="number"
-            min="1"
-            :value="config?.amount || 0"
-            @input="updateField('amount', parseInt($event.target.value) || 0)"
-          />
-        </div>
+        <PolarisTextField
+          label="Amount"
+          required
+          type="number"
+          :min="1"
+          :modelValue="config?.amount || 0"
+          @update:modelValue="updateField('amount', parseInt($event) || 0)"
+        />
 
-        <div class="polaris-form-field">
-          <label class="polaris-form-field__label">Description</label>
-          <input
-            class="polaris-form-field__input"
-            placeholder="e.g. Bonus for {{trigger.event}}"
-            :value="config?.description || ''"
-            @input="updateField('description', $event.target.value)"
-          />
-          <span class="polaris-form-field__help">Supports &#123;&#123;variable&#125;&#125; substitution</span>
-        </div>
+        <PolarisTextField
+          label="Description"
+          placeholder="e.g. Bonus for {{trigger.event}}"
+          :modelValue="config?.description || ''"
+          @update:modelValue="updateField('description', $event)"
+          helpText="Supports {{variable}} substitution"
+        />
       </template>
 
       <!-- ═══ ASSIGN TAG / REMOVE TAG ═══ -->
       <template v-if="config?.action_type === 'assign_tag' || config?.action_type === 'remove_tag'">
-        <div class="polaris-form-field">
-          <label class="polaris-form-field__label polaris-form-field__label--required">Tag</label>
-          <select
-            class="polaris-form-field__select"
-            :value="config?.tag_id || ''"
-            @change="updateField('tag_id', $event.target.value)"
-          >
-            <option value="" disabled>Select tag...</option>
-            <option v-for="tag in tags" :key="tag?.id" :value="tag?.id">{{ tag?.tag_name }}</option>
-          </select>
-        </div>
+        <PolarisSelect
+          label="Tag"
+          required
+          :modelValue="config?.tag_id || ''"
+          @update:modelValue="updateField('tag_id', $event)"
+          :options="tagOptions"
+          placeholder="Select tag..."
+        />
       </template>
 
       <!-- ═══ ASSIGN PERSONA ═══ -->
       <template v-if="config?.action_type === 'assign_persona'">
-        <div class="polaris-form-field">
-          <label class="polaris-form-field__label polaris-form-field__label--required">Persona</label>
-          <select
-            class="polaris-form-field__select"
-            :value="config?.persona_id || ''"
-            @change="updateField('persona_id', $event.target.value)"
-          >
-            <option value="" disabled>Select persona...</option>
-            <optgroup v-for="group in personaGroups" :key="group?.id" :label="group?.group_name || 'Ungrouped'">
-              <option v-for="p in (group?.personas || [])" :key="p?.id" :value="p?.id">{{ p?.persona_name }}</option>
-            </optgroup>
-          </select>
-        </div>
+        <PolarisSelect
+          label="Persona"
+          required
+          :modelValue="config?.persona_id || ''"
+          @update:modelValue="updateField('persona_id', $event)"
+          :options="personaOptions"
+          placeholder="Select persona..."
+        />
       </template>
 
       <!-- ═══ ASSIGN EARN FACTOR ═══ -->
       <template v-if="config?.action_type === 'assign_earn_factor'">
-        <div class="polaris-form-field">
-          <label class="polaris-form-field__label polaris-form-field__label--required">Earn Factor</label>
-          <select
-            class="polaris-form-field__select"
-            :value="config?.earn_factor_id || ''"
-            @change="updateField('earn_factor_id', $event.target.value)"
-          >
-            <option value="" disabled>Select earn factor...</option>
-            <optgroup
-              v-for="group in earnFactorGroups"
-              :key="group.groupName"
-              :label="group.groupName"
-            >
-              <option v-for="ef in group.factors" :key="ef.id" :value="ef.id">{{ ef.displayLabel }}</option>
-            </optgroup>
-          </select>
-        </div>
+        <PolarisSelect
+          label="Earn Factor"
+          required
+          :modelValue="config?.earn_factor_id || ''"
+          @update:modelValue="updateField('earn_factor_id', $event)"
+          :options="earnFactorOptions"
+          placeholder="Select earn factor..."
+        />
 
-        <div class="polaris-form-field">
-          <label class="polaris-form-field__label polaris-form-field__label--required">Duration (days)</label>
-          <input
-            class="polaris-form-field__input"
-            type="number"
-            min="1"
-            :value="config?.window_end_days || 30"
-            @input="updateField('window_end_days', parseInt($event.target.value) || 30)"
-          />
-          <span class="polaris-form-field__help">How many days is this offer valid? Starts from the moment the workflow runs for each user.</span>
-        </div>
+        <PolarisTextField
+          label="Duration (days)"
+          required
+          type="number"
+          :min="1"
+          :modelValue="config?.window_end_days || 30"
+          @update:modelValue="updateField('window_end_days', parseInt($event) || 30)"
+          helpText="How many days is this offer valid? Starts from the moment the workflow runs for each user."
+        />
       </template>
 
       <!-- ═══ SUBMIT FORM ═══ -->
       <template v-if="config?.action_type === 'submit_form'">
-        <div class="polaris-form-field">
-          <label class="polaris-form-field__label polaris-form-field__label--required">Form Template</label>
-          <select
-            class="polaris-form-field__select"
-            :value="config?.form_id || ''"
-            @change="handleFormSelect($event.target.value)"
-          >
-            <option value="" disabled>Select form...</option>
-            <option v-for="f in forms" :key="f?.id" :value="f?.id">{{ f?.name }}{{ f?.form_category ? ` (${f.form_category})` : '' }}</option>
-          </select>
-        </div>
+        <PolarisSelect
+          label="Form Template"
+          required
+          :modelValue="config?.form_id || ''"
+          @update:modelValue="handleFormSelect($event)"
+          :options="formOptions"
+          placeholder="Select form..."
+        />
 
         <!-- Form field loading -->
         <div v-if="formFieldsLoading" class="loading-state loading-state--inline">
@@ -162,127 +128,143 @@
 
         <!-- Dynamic Form Fields -->
         <div v-else-if="formFields.length" class="form-fields-section">
-          <label class="polaris-form-field__label">Field Values</label>
+          <span class="form-fields-section__label">Field Values</span>
           <div
             v-for="field in formFields"
             :key="field?.id || field?.field_key"
-            class="polaris-form-field"
           >
-            <label class="polaris-form-field__label" :class="{ 'polaris-form-field__label--required': field?.is_required }">
-              {{ field?.label || field?.field_key }}
-            </label>
-            <span v-if="field?.help_text" class="polaris-form-field__help">{{ field.help_text }}</span>
-
             <!-- Text (with text_format support) -->
-            <input
+            <PolarisTextField
               v-if="field?.field_type === 'text'"
-              class="polaris-form-field__input"
+              :label="field?.label || field?.field_key"
+              :required="field?.is_required"
               :type="getInputType(field?.text_format)"
               :placeholder="field?.placeholder || ''"
-              :value="getFieldValue(field.field_key)"
-              @input="setFieldValue(field.field_key, $event.target.value)"
+              :modelValue="getFieldValue(field.field_key)"
+              @update:modelValue="setFieldValue(field.field_key, $event)"
+              :helpText="field?.help_text || undefined"
             />
 
             <!-- Number -->
-            <input
+            <PolarisTextField
               v-else-if="field?.field_type === 'number'"
-              class="polaris-form-field__input"
+              :label="field?.label || field?.field_key"
+              :required="field?.is_required"
               type="number"
               :min="field?.min_value"
               :max="field?.max_value"
               :placeholder="field?.placeholder || ''"
-              :value="getFieldValue(field.field_key)"
-              @input="setFieldValue(field.field_key, parseFloat($event.target.value) || 0)"
+              :modelValue="getFieldValue(field.field_key)"
+              @update:modelValue="setFieldValue(field.field_key, parseFloat($event) || 0)"
+              :helpText="field?.help_text || undefined"
             />
 
             <!-- Date -->
-            <input
+            <PolarisTextField
               v-else-if="field?.field_type === 'date'"
-              class="polaris-form-field__input"
+              :label="field?.label || field?.field_key"
+              :required="field?.is_required"
               type="date"
-              :value="getFieldValue(field.field_key)"
-              @input="setFieldValue(field.field_key, $event.target.value)"
+              :modelValue="getFieldValue(field.field_key)"
+              @update:modelValue="setFieldValue(field.field_key, $event)"
+              :helpText="field?.help_text || undefined"
             />
 
             <!-- Select -->
-            <select
+            <PolarisSelect
               v-else-if="field?.field_type === 'select'"
-              class="polaris-form-field__select"
-              :value="getFieldValue(field.field_key)"
-              @change="setFieldValue(field.field_key, $event.target.value)"
-            >
-              <option value="">{{ field?.placeholder || 'Select...' }}</option>
-              <option
-                v-for="opt in safeOptions(field)"
-                :key="opt?.value"
-                :value="opt?.value"
-              >{{ opt?.label || opt?.value }}</option>
-            </select>
+              :label="field?.label || field?.field_key"
+              :required="field?.is_required"
+              :modelValue="getFieldValue(field.field_key)"
+              @update:modelValue="setFieldValue(field.field_key, $event)"
+              :options="selectFieldOptions(field)"
+              :placeholder="field?.placeholder || 'Select...'"
+              :helpText="field?.help_text || undefined"
+            />
 
             <!-- Radio -->
-            <div v-else-if="field?.field_type === 'radio'" class="radio-group">
-              <label
-                v-for="opt in safeOptions(field)"
-                :key="opt?.value"
-                class="radio-option"
-              >
-                <input
-                  type="radio"
-                  :name="`field_${field.field_key}`"
-                  :value="opt?.value"
-                  :checked="getFieldValue(field.field_key) === opt?.value"
-                  @change="setFieldValue(field.field_key, opt?.value)"
-                />
-                <span>{{ opt?.label || opt?.value }}</span>
+            <div v-else-if="field?.field_type === 'radio'" class="polaris-form-field">
+              <label class="polaris-form-field__label" :class="{ 'polaris-form-field__label--required': field?.is_required }">
+                {{ field?.label || field?.field_key }}
               </label>
+              <span v-if="field?.help_text" class="polaris-form-field__help">{{ field.help_text }}</span>
+              <div class="radio-group">
+                <label
+                  v-for="opt in safeOptions(field)"
+                  :key="opt?.value"
+                  class="radio-option"
+                >
+                  <input
+                    type="radio"
+                    :name="`field_${field.field_key}`"
+                    :value="opt?.value"
+                    :checked="getFieldValue(field.field_key) === opt?.value"
+                    @change="setFieldValue(field.field_key, opt?.value)"
+                  />
+                  <span>{{ opt?.label || opt?.value }}</span>
+                </label>
+              </div>
             </div>
 
             <!-- Multiselect (checkboxes) -->
-            <div v-else-if="field?.field_type === 'multiselect'" class="multiselect-group">
-              <label
-                v-for="opt in safeOptions(field)"
-                :key="opt?.value"
-                class="multiselect-option"
-              >
-                <input
-                  type="checkbox"
-                  :checked="isMultiselectChecked(field.field_key, opt?.value)"
-                  @change="toggleMultiselectValue(field.field_key, opt?.value, $event.target.checked)"
-                />
-                <span>{{ opt?.label || opt?.value }}</span>
+            <div v-else-if="field?.field_type === 'multiselect'" class="polaris-form-field">
+              <label class="polaris-form-field__label" :class="{ 'polaris-form-field__label--required': field?.is_required }">
+                {{ field?.label || field?.field_key }}
               </label>
-              <span v-if="field?.min_selections || field?.max_selections" class="polaris-form-field__help">
-                {{ field?.min_selections ? `Min ${field.min_selections}` : '' }}{{ field?.min_selections && field?.max_selections ? ', ' : '' }}{{ field?.max_selections ? `Max ${field.max_selections}` : '' }} selections
-              </span>
+              <span v-if="field?.help_text" class="polaris-form-field__help">{{ field.help_text }}</span>
+              <div class="multiselect-group">
+                <label
+                  v-for="opt in safeOptions(field)"
+                  :key="opt?.value"
+                  class="multiselect-option"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="isMultiselectChecked(field.field_key, opt?.value)"
+                    @change="toggleMultiselectValue(field.field_key, opt?.value, $event.target.checked)"
+                  />
+                  <span>{{ opt?.label || opt?.value }}</span>
+                </label>
+                <span v-if="field?.min_selections || field?.max_selections" class="polaris-form-field__help">
+                  {{ field?.min_selections ? `Min ${field.min_selections}` : '' }}{{ field?.min_selections && field?.max_selections ? ', ' : '' }}{{ field?.max_selections ? `Max ${field.max_selections}` : '' }} selections
+                </span>
+              </div>
             </div>
 
             <!-- Checkbox / Toggle -->
-            <label v-else-if="field?.field_type === 'checkbox'" class="toggle-field">
-              <input
-                type="checkbox"
-                :checked="getFieldValue(field.field_key) === true"
-                @change="setFieldValue(field.field_key, $event.target.checked)"
-              />
-              <span>{{ field?.placeholder || 'Enabled' }}</span>
-            </label>
+            <div v-else-if="field?.field_type === 'checkbox'" class="polaris-form-field">
+              <label class="toggle-field">
+                <input
+                  type="checkbox"
+                  :checked="getFieldValue(field.field_key) === true"
+                  @change="setFieldValue(field.field_key, $event.target.checked)"
+                />
+                <span>{{ field?.placeholder || 'Enabled' }}</span>
+              </label>
+            </div>
 
             <!-- Textarea -->
-            <textarea
+            <PolarisTextField
               v-else-if="field?.field_type === 'textarea'"
-              class="polaris-form-field__textarea"
-              rows="3"
+              :label="field?.label || field?.field_key"
+              :required="field?.is_required"
+              multiline
+              :rows="3"
               :placeholder="field?.placeholder || ''"
-              :value="getFieldValue(field.field_key)"
-              @input="setFieldValue(field.field_key, $event.target.value)"
+              :modelValue="getFieldValue(field.field_key)"
+              @update:modelValue="setFieldValue(field.field_key, $event)"
+              :helpText="field?.help_text || undefined"
             />
 
             <!-- Fallback -->
-            <input
+            <PolarisTextField
               v-else
-              class="polaris-form-field__input"
+              :label="field?.label || field?.field_key"
+              :required="field?.is_required"
               :placeholder="field?.placeholder || ''"
-              :value="getFieldValue(field.field_key)"
-              @input="setFieldValue(field.field_key, $event.target.value)"
+              :modelValue="getFieldValue(field.field_key)"
+              @update:modelValue="setFieldValue(field.field_key, $event)"
+              :helpText="field?.help_text || undefined"
             />
           </div>
         </div>
@@ -290,80 +272,76 @@
 
       <!-- ═══ SEND LINE MESSAGE ═══ -->
       <template v-if="activeType === 'send_line'">
-        <div class="polaris-form-field">
-          <label class="polaris-form-field__label polaris-form-field__label--required">Message Content</label>
-          <textarea
-            class="polaris-form-field__textarea"
-            rows="4"
-            placeholder="Hello {{user.firstname}}!"
-            :value="config?.content || ''"
-            @input="updateField('content', $event.target.value)"
-          />
-          <span class="polaris-form-field__help">Supports &#123;&#123;variable&#125;&#125; substitution</span>
-        </div>
+        <PolarisTextField
+          label="Message Content"
+          required
+          multiline
+          :rows="4"
+          placeholder="Hello {{user.firstname}}!"
+          :modelValue="config?.content || ''"
+          @update:modelValue="updateField('content', $event)"
+          helpText="Supports {{variable}} substitution"
+        />
 
-        <div class="polaris-form-field">
-          <label class="polaris-form-field__label">LINE Flex JSON (optional)</label>
-          <textarea
-            class="polaris-form-field__textarea polaris-form-field__textarea--mono"
-            rows="6"
-            placeholder='{"type": "flex", ...}'
-            :value="jsonContentString"
-            @input="handleJsonChange($event.target.value)"
-          />
-          <span v-if="jsonError" class="polaris-form-field__error">{{ jsonError }}</span>
-        </div>
+        <PolarisTextField
+          label="LINE Flex JSON (optional)"
+          multiline
+          monospace
+          :rows="6"
+          placeholder='{"type": "flex", ...}'
+          :modelValue="jsonContentString"
+          @update:modelValue="handleJsonChange($event)"
+          :error="jsonError || undefined"
+        />
       </template>
 
       <!-- ═══ SEND SMS ═══ -->
       <template v-if="activeType === 'send_sms'">
-        <div class="polaris-form-field">
-          <label class="polaris-form-field__label polaris-form-field__label--required">Message</label>
-          <textarea
-            class="polaris-form-field__textarea"
-            rows="3"
-            placeholder="Your code is {{trigger.code}}"
-            :value="config?.message || ''"
-            @input="updateField('message', $event.target.value)"
-          />
-          <span class="polaris-form-field__help">Supports &#123;&#123;variable&#125;&#125; substitution</span>
-        </div>
+        <PolarisTextField
+          label="Message"
+          required
+          multiline
+          :rows="3"
+          placeholder="Your code is {{trigger.code}}"
+          :modelValue="config?.message || ''"
+          @update:modelValue="updateField('message', $event)"
+          helpText="Supports {{variable}} substitution"
+        />
       </template>
 
       <!-- ═══ API CALL ═══ -->
       <template v-if="config?.action_type === 'api_call'">
-        <div class="polaris-form-field__row">
-          <div class="polaris-form-field" style="width: 120px; flex-shrink: 0;">
-            <label class="polaris-form-field__label polaris-form-field__label--required">Method</label>
-            <select class="polaris-form-field__select" :value="config?.method || 'POST'" @change="updateField('method', $event.target.value)">
-              <option value="GET">GET</option>
-              <option value="POST">POST</option>
-              <option value="PUT">PUT</option>
-              <option value="PATCH">PATCH</option>
-              <option value="DELETE">DELETE</option>
-            </select>
-          </div>
-          <div class="polaris-form-field" style="flex: 1;">
-            <label class="polaris-form-field__label polaris-form-field__label--required">URL</label>
-            <input
-              class="polaris-form-field__input"
-              placeholder="https://api.example.com/endpoint"
-              :value="config?.url || ''"
-              @input="updateField('url', $event.target.value)"
+        <PolarisInline gap="200" blockAlign="end">
+          <div style="width: 120px; flex-shrink: 0;">
+            <PolarisSelect
+              label="Method"
+              required
+              :modelValue="config?.method || 'POST'"
+              @update:modelValue="updateField('method', $event)"
+              :options="methodOptions"
             />
           </div>
-        </div>
+          <div style="flex: 1;">
+            <PolarisTextField
+              label="URL"
+              required
+              placeholder="https://api.example.com/endpoint"
+              :modelValue="config?.url || ''"
+              @update:modelValue="updateField('url', $event)"
+            />
+          </div>
+        </PolarisInline>
 
-        <div v-if="config?.method !== 'GET'" class="polaris-form-field">
-          <label class="polaris-form-field__label">Body (JSON)</label>
-          <textarea
-            class="polaris-form-field__textarea polaris-form-field__textarea--mono"
-            rows="5"
-            :value="bodyString"
-            @input="handleBodyChange($event.target.value)"
-          />
-          <span v-if="bodyError" class="polaris-form-field__error">{{ bodyError }}</span>
-        </div>
+        <PolarisTextField
+          v-if="config?.method !== 'GET'"
+          label="Body (JSON)"
+          multiline
+          monospace
+          :rows="5"
+          :modelValue="bodyString"
+          @update:modelValue="handleBodyChange($event)"
+          :error="bodyError || undefined"
+        />
       </template>
 
       <!-- ═══ VARIABLE REFERENCE ═══ -->
@@ -396,6 +374,12 @@
 
 <script>
 import { computed, ref, watch, onMounted } from 'vue';
+import {
+  PolarisTextField,
+  PolarisSelect,
+  PolarisButton,
+  PolarisInline,
+} from 'polaris-weweb-styles/components';
 
 const ACTION_GROUPS = [
   {
@@ -449,8 +433,22 @@ const VARS_AGENT = [
   '{{agent.action}}', '{{agent.urgency}}',
 ];
 
+const methodOptions = [
+  { value: 'GET', label: 'GET' },
+  { value: 'POST', label: 'POST' },
+  { value: 'PUT', label: 'PUT' },
+  { value: 'PATCH', label: 'PATCH' },
+  { value: 'DELETE', label: 'DELETE' },
+];
+
 export default {
   name: 'ActionConfig',
+  components: {
+    PolarisTextField,
+    PolarisSelect,
+    PolarisButton,
+    PolarisInline,
+  },
   props: {
     config: { type: Object, required: true },
     supabaseUrl: { type: String, default: '' },
@@ -463,7 +461,6 @@ export default {
     const bodyError = ref('');
     const showVariables = ref(false);
 
-    // Data fetched from Supabase
     const optionsLoading = ref(false);
     const ticketTypes = ref([]);
     const tags = ref([]);
@@ -475,6 +472,41 @@ export default {
     const formFields = ref([]);
 
     const activeType = computed(() => props.config?.action_type || props.config?.channel || '');
+
+    // Flatten ACTION_GROUPS into flat options with optgroup-style labels
+    const actionTypeOptions = computed(() => {
+      const opts = [];
+      for (const group of ACTION_GROUPS) {
+        for (const action of group.actions) {
+          opts.push({ value: action.value, label: `${group.label} — ${action.label}` });
+        }
+      }
+      return opts;
+    });
+
+    const ticketTypeOptions = computed(() => {
+      return ticketTypes.value.map(t => ({
+        value: t?.id,
+        label: t?.description ? `${t?.name} — ${t.description}` : t?.name,
+      }));
+    });
+
+    const tagOptions = computed(() => {
+      return tags.value.map(tag => ({
+        value: tag?.id,
+        label: tag?.tag_name,
+      }));
+    });
+
+    const personaOptions = computed(() => {
+      const opts = [];
+      for (const group of personaGroups.value) {
+        for (const p of (group?.personas || [])) {
+          opts.push({ value: p?.id, label: `${group?.group_name || 'Ungrouped'} — ${p?.persona_name}` });
+        }
+      }
+      return opts;
+    });
 
     const earnFactorGroups = computed(() => {
       const factors = privateEarnFactors.value || [];
@@ -500,6 +532,23 @@ export default {
         groupMap[gName].factors.push({ id: ef.id, displayLabel: label });
       });
       return Object.values(groupMap);
+    });
+
+    const earnFactorOptions = computed(() => {
+      const opts = [];
+      for (const group of earnFactorGroups.value) {
+        for (const ef of group.factors) {
+          opts.push({ value: ef.id, label: `${group.groupName} — ${ef.displayLabel}` });
+        }
+      }
+      return opts;
+    });
+
+    const formOptions = computed(() => {
+      return forms.value.map(f => ({
+        value: f?.id,
+        label: f?.form_category ? `${f?.name} (${f.form_category})` : f?.name,
+      }));
     });
 
     const jsonContentString = computed(() => {
@@ -594,7 +643,6 @@ export default {
       await fetchFormFields(formId);
     };
 
-    // Form field value accessors
     const getFieldValue = (fieldKey) => props.config?.field_values?.[fieldKey] ?? '';
 
     const setFieldValue = (fieldKey, value) => {
@@ -609,6 +657,14 @@ export default {
         try { return JSON.parse(opts); } catch { return []; }
       }
       return [];
+    };
+
+    const selectFieldOptions = (field) => {
+      const opts = safeOptions(field);
+      return [
+        { value: '', label: field?.placeholder || 'Select...' },
+        ...opts.map(opt => ({ value: opt?.value, label: opt?.label || opt?.value })),
+      ];
     };
 
     const getInputType = (textFormat) => {
@@ -633,7 +689,6 @@ export default {
       setFieldValue(fieldKey, current);
     };
 
-    // JSON handlers
     const handleJsonChange = (value) => {
       if (!value) { emit('update', { ...props.config, json_content: null }); jsonError.value = ''; return; }
       try { emit('update', { ...props.config, json_content: JSON.parse(value) }); jsonError.value = ''; }
@@ -651,16 +706,23 @@ export default {
       VARS_USER,
       VARS_TRIGGER,
       VARS_AGENT,
+      methodOptions,
       optionsLoading,
       ticketTypes,
       tags,
       personaGroups,
       privateEarnFactors,
       earnFactorGroups,
+      earnFactorOptions,
       forms,
       formFieldsLoading,
       formFields,
       activeType,
+      actionTypeOptions,
+      ticketTypeOptions,
+      tagOptions,
+      personaOptions,
+      formOptions,
       jsonContentString,
       jsonError,
       bodyString,
@@ -672,6 +734,7 @@ export default {
       getFieldValue,
       setFieldValue,
       safeOptions,
+      selectFieldOptions,
       getInputType,
       isMultiselectChecked,
       toggleMultiselectValue,
@@ -692,6 +755,7 @@ export default {
   gap: var(--p-space-400);
 }
 
+// Custom patterns kept as-is
 .polaris-form-field {
   display: flex;
   flex-direction: column;
@@ -702,21 +766,7 @@ export default {
     &--required::after { content: ' *'; color: var(--p-color-text-critical); }
   }
 
-  &__input { @include polaris-input; }
-  &__select { @include polaris-select; }
-  &__textarea {
-    @include polaris-textarea;
-    &--mono { font-family: var(--p-font-family-mono); font-size: var(--p-font-size-300); }
-  }
-
   &__help { @include polaris-help-text; }
-  &__error { @include polaris-error-text; }
-
-  &__row {
-    display: flex;
-    gap: var(--p-space-200);
-    align-items: flex-end;
-  }
 }
 
 .segmented-toggle {
@@ -756,6 +806,12 @@ export default {
   background: var(--p-color-bg-surface-secondary);
   border: 1px solid var(--p-color-border);
   border-radius: var(--p-border-radius-200);
+
+  &__label {
+    font-size: var(--p-font-size-300);
+    font-weight: var(--p-font-weight-medium);
+    color: var(--p-color-text);
+  }
 }
 
 .radio-group, .multiselect-group {
@@ -817,7 +873,6 @@ export default {
   to { transform: rotate(360deg); }
 }
 
-// Variable reference panel
 .variable-ref {
   border-top: 1px solid var(--p-color-border);
   padding-top: var(--p-space-300);
@@ -875,11 +930,4 @@ export default {
 
   &:hover { background: var(--p-color-bg-surface-hover); }
 }
-
-.polaris-banner {
-  @include polaris-banner-base;
-  &--info { @include polaris-banner-info; }
-}
-.polaris-banner__content { flex: 1; }
-.polaris-banner__message { @include polaris-text-body; margin: 0; }
 </style>

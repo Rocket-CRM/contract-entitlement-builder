@@ -20,20 +20,24 @@
 
       <template v-if="localConfig.quiet_hours?.enabled">
         <div class="time-row">
-          <div class="polaris-form-field">
-            <label class="polaris-form-field__label">Start</label>
-            <input class="polaris-form-field__input" type="time" :value="localConfig.quiet_hours?.start || '22:00'" @input="updateQuietHours('start', $event.target.value)" />
-          </div>
-          <div class="polaris-form-field">
-            <label class="polaris-form-field__label">End</label>
-            <input class="polaris-form-field__input" type="time" :value="localConfig.quiet_hours?.end || '08:00'" @input="updateQuietHours('end', $event.target.value)" />
-          </div>
-          <div class="polaris-form-field">
-            <label class="polaris-form-field__label">Timezone</label>
-            <select class="polaris-form-field__select" :value="localConfig.quiet_hours?.timezone || 'Asia/Bangkok'" @change="updateQuietHours('timezone', $event.target.value)">
-              <option v-for="tz in TIMEZONES" :key="tz" :value="tz">{{ tz }}</option>
-            </select>
-          </div>
+          <PolarisTextField
+            label="Start"
+            type="time"
+            :modelValue="localConfig.quiet_hours?.start || '22:00'"
+            @update:modelValue="updateQuietHours('start', $event)"
+          />
+          <PolarisTextField
+            label="End"
+            type="time"
+            :modelValue="localConfig.quiet_hours?.end || '08:00'"
+            @update:modelValue="updateQuietHours('end', $event)"
+          />
+          <PolarisSelect
+            label="Timezone"
+            :modelValue="localConfig.quiet_hours?.timezone || 'Asia/Bangkok'"
+            @update:modelValue="updateQuietHours('timezone', $event)"
+            :options="timezoneOptions"
+          />
         </div>
       </template>
     </section>
@@ -49,20 +53,25 @@
           <button class="blackout-tag__remove" @click="removeBlackoutDate(idx)">✕</button>
         </span>
       </div>
-      <input class="polaris-form-field__input" type="date" @change="addBlackoutDate($event.target.value); $event.target.value = ''" />
+      <PolarisTextField
+        labelHidden
+        label="Add blackout date"
+        type="date"
+        modelValue=""
+        @update:modelValue="addBlackoutDate($event)"
+      />
     </section>
 
     <!-- ═══ CAMPAIGN KPI ═══ -->
     <section class="settings-section">
       <h3 class="settings-section__title">Campaign KPI</h3>
 
-      <div class="polaris-form-field">
-        <label class="polaris-form-field__label">Desired Outcome</label>
-        <select class="polaris-form-field__select" :value="localConfig.campaign_kpi?.desired_outcome || ''" @change="updateKpi('desired_outcome', $event.target.value)">
-          <option value="">None</option>
-          <option v-for="o in OUTCOMES" :key="o.value" :value="o.value">{{ o.label }}</option>
-        </select>
-      </div>
+      <PolarisSelect
+        label="Desired Outcome"
+        :modelValue="localConfig.campaign_kpi?.desired_outcome || ''"
+        @update:modelValue="updateKpi('desired_outcome', $event)"
+        :options="outcomeOptions"
+      />
 
       <div class="kpi-row">
         <div class="polaris-form-field">
@@ -87,6 +96,10 @@
 <script>
 import { reactive, watch } from 'vue';
 import ConstraintBuilder from './ConstraintBuilder.vue';
+import {
+  PolarisTextField,
+  PolarisSelect,
+} from 'polaris-weweb-styles/components';
 
 const TIMEZONES = [
   'Asia/Bangkok', 'Asia/Singapore', 'Asia/Tokyo', 'Asia/Shanghai',
@@ -103,7 +116,7 @@ const OUTCOMES = [
 
 export default {
   name: 'WorkflowSettings',
-  components: { ConstraintBuilder },
+  components: { ConstraintBuilder, PolarisTextField, PolarisSelect },
   props: {
     config: { type: Object, default: () => ({}) },
   },
@@ -115,6 +128,13 @@ export default {
       blackout_dates: [],
       campaign_kpi: { desired_outcome: '', measurement_window_days: 7, target_conversion_rate: null },
     });
+
+    const timezoneOptions = TIMEZONES.map(tz => ({ value: tz, label: tz }));
+
+    const outcomeOptions = [
+      { value: '', label: 'None' },
+      ...OUTCOMES,
+    ];
 
     watch(() => props.config, (cfg) => {
       if (!cfg) return;
@@ -128,19 +148,16 @@ export default {
       emit('update', JSON.parse(JSON.stringify(localConfig)));
     };
 
-    // Constraints
     const handleConstraintsUpdate = (newConstraints) => {
       localConfig.constraints = newConstraints;
       emitConfig();
     };
 
-    // Quiet Hours
     const updateQuietHours = (field, value) => {
       localConfig.quiet_hours[field] = value;
       emitConfig();
     };
 
-    // Blackout Dates
     const addBlackoutDate = (dateStr) => {
       if (!dateStr) return;
       if (!localConfig.blackout_dates.includes(dateStr)) {
@@ -160,14 +177,13 @@ export default {
       catch { return iso; }
     };
 
-    // Campaign KPI
     const updateKpi = (field, value) => {
       localConfig.campaign_kpi[field] = value;
       emitConfig();
     };
 
     return {
-      TIMEZONES, OUTCOMES, localConfig,
+      timezoneOptions, outcomeOptions, localConfig,
       handleConstraintsUpdate,
       updateQuietHours,
       addBlackoutDate, removeBlackoutDate, formatDate,
@@ -206,23 +222,7 @@ export default {
   }
 }
 
-.polaris-form-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--p-space-100);
-
-  &__label { font-size: var(--p-font-size-300); font-weight: var(--p-font-weight-medium); color: var(--p-color-text); }
-  &__input { @include polaris-input; font-size: var(--p-font-size-300); }
-  &__select { @include polaris-select; font-size: var(--p-font-size-300); }
-}
-
-.polaris-btn {
-  @include polaris-button-base;
-  font-size: var(--p-font-size-300);
-  &--plain { @include polaris-button-plain; }
-}
-
-// Quiet hours
+// Custom patterns: toggle rows, time row, blackout tags, input suffixes, KPI row
 .toggle-row {
   display: flex;
   align-items: center;
@@ -239,10 +239,9 @@ export default {
   align-items: flex-end;
   flex-wrap: wrap;
 
-  .polaris-form-field { flex: 1; min-width: 100px; }
+  > * { flex: 1; min-width: 100px; }
 }
 
-// Blackout dates
 .blackout-tags {
   display: flex;
   flex-wrap: wrap;
@@ -272,7 +271,15 @@ export default {
   }
 }
 
-// KPI
+.polaris-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--p-space-100);
+
+  &__label { font-size: var(--p-font-size-300); font-weight: var(--p-font-weight-medium); color: var(--p-color-text); }
+  &__input { @include polaris-input; font-size: var(--p-font-size-300); }
+}
+
 .kpi-row {
   display: flex;
   gap: var(--p-space-200);

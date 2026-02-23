@@ -8,10 +8,10 @@
           <span class="user-list-panel__count">{{ totalCount }} total users</span>
         </div>
         <div class="user-list-panel__actions">
-          <button class="polaris-btn polaris-btn--default" @click="handleExport">
+          <PolarisButton @click="handleExport">
             <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17h14"/><path d="M10 3v11"/><path d="M6 10l4 4 4-4"/></svg>
             Export
-          </button>
+          </PolarisButton>
           <button class="user-list-panel__close" @click="$emit('close')">
             <svg viewBox="0 0 20 20" width="16" height="16"><path d="M11.414 10l4.293-4.293a1 1 0 00-1.414-1.414L10 8.586 5.707 4.293a1 1 0 00-1.414 1.414L8.586 10l-4.293 4.293a1 1 0 101.414 1.414L10 11.414l4.293 4.293a1 1 0 001.414-1.414L11.414 10z" fill="currentColor"/></svg>
           </button>
@@ -50,9 +50,9 @@
 
       <!-- Pagination -->
       <div v-if="totalPages > 1" class="user-list-panel__footer">
-        <button class="polaris-btn polaris-btn--default" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">← Prev</button>
+        <PolarisButton :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">← Prev</PolarisButton>
         <span class="user-list-panel__page-info">Page {{ currentPage }} of {{ totalPages }}</span>
-        <button class="polaris-btn polaris-btn--default" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">Next →</button>
+        <PolarisButton :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">Next →</PolarisButton>
       </div>
     </div>
   </div>
@@ -60,9 +60,11 @@
 
 <script>
 import { ref, watch, onMounted } from 'vue';
+import { PolarisButton } from 'polaris-weweb-styles/components';
 
 export default {
   name: 'NodeUserList',
+  components: { PolarisButton },
   props: {
     workflowId: { type: String, required: true },
     nodeId: { type: String, required: true },
@@ -301,12 +303,5 @@ export default {
 .user-list-panel__page-info {
   font-size: var(--p-font-size-300);
   color: var(--p-color-text-secondary);
-}
-
-.polaris-btn {
-  @include polaris-button-base;
-  font-size: var(--p-font-size-300);
-  &--default { @include polaris-button-default; }
-  &--primary { @include polaris-button-primary; }
 }
 </style>

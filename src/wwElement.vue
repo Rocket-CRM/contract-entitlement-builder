@@ -23,13 +23,12 @@
         >
           <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M17.2 8l-1-.2c-.1-.4-.3-.7-.5-1l.5-.9c.2-.4.2-.9-.2-1.2l-1.2-1.2c-.4-.3-.8-.4-1.2-.2l-.9.5c-.3-.2-.7-.4-1-.5L11.5 2c-.1-.5-.5-.8-1-.8h-1.7c-.5 0-.9.4-1 .8l-.2 1c-.4.1-.7.3-1 .5l-.9-.5c-.4-.2-.9-.1-1.2.2L3.3 4.7c-.3.3-.4.8-.2 1.2l.5.9c-.2.3-.4.7-.5 1l-1 .2c-.5.1-.8.5-.8 1v1.7c0 .5.4.9.8 1l1 .2c.1.4.3.7.5 1l-.5.9c-.2.4-.1.9.2 1.2l1.2 1.2c.3.3.8.4 1.2.2l.9-.5c.3.2.7.4 1 .5l.2 1c.1.5.5.8 1 .8h1.7c.5 0 .9-.4 1-.8l.2-1c.4-.1.7-.3 1-.5l.9.5c.4.2.9.1 1.2-.2l1.2-1.2c.3-.3.4-.8.2-1.2l-.5-.9c.2-.3.4-.7.5-1l1-.2c.5-.1.8-.5.8-1V9c0-.5-.4-.9-.8-1zM10 13c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z"/></svg>
         </button>
-        <button
+        <PolarisButton
           v-if="workflowMeta.is_active"
-          class="polaris-btn polaris-btn--default"
           @click="handleBatchRun"
-        >Batch Run</button>
-        <button class="polaris-btn polaris-btn--default" @click="handleExit">Exit</button>
-        <button class="polaris-btn polaris-btn--primary" @click="openStatusPanel">Update status</button>
+        >Batch Run</PolarisButton>
+        <PolarisButton @click="handleExit">Exit</PolarisButton>
+        <PolarisButton variant="primary" @click="openStatusPanel">Update status</PolarisButton>
       </div>
     </div>
 
@@ -124,16 +123,14 @@
             @update="handleConfigUpdate"
           />
 
-          <div v-if="configValidationErrorsList.length > 0" class="config-panel__errors">
-            <ul>
-              <li v-for="(error, idx) in configValidationErrorsList" :key="idx">{{ error }}</li>
-            </ul>
-          </div>
+          <PolarisBanner v-if="configValidationErrorsList.length > 0" variant="critical" title="Validation errors">
+            <ul><li v-for="(error, idx) in configValidationErrorsList" :key="idx">{{ error }}</li></ul>
+          </PolarisBanner>
         </div>
 
         <div class="config-panel__footer">
-          <button class="polaris-btn polaris-btn--default" @click="cancelConfigEdit">Cancel</button>
-          <button class="polaris-btn polaris-btn--primary" @click="saveConfigEdit">Save</button>
+          <PolarisButton @click="cancelConfigEdit">Cancel</PolarisButton>
+          <PolarisButton variant="primary" @click="saveConfigEdit">Save</PolarisButton>
         </div>
       </div>
 
@@ -158,8 +155,8 @@
           />
         </div>
         <div class="config-panel__footer">
-          <button class="polaris-btn polaris-btn--default" @click="closeSettingsPanel">Cancel</button>
-          <button class="polaris-btn polaris-btn--primary" @click="saveWorkflowSettings">Save</button>
+          <PolarisButton @click="closeSettingsPanel">Cancel</PolarisButton>
+          <PolarisButton variant="primary" @click="saveWorkflowSettings">Save</PolarisButton>
         </div>
       </div>
     </div>
@@ -203,14 +200,14 @@
     <!-- Status Panel (right overlay) -->
     <div v-if="statusPanelOpen" class="status-panel">
       <div class="status-panel__content">
-        <div class="polaris-form-field">
-          <label class="polaris-form-field__label">Flow status <span class="polaris-form-field__required">*</span></label>
-          <p class="polaris-form-field__help">Select a status for all actions in your workflow</p>
-          <select class="polaris-form-field__select" v-model="pendingStatus">
-            <option :value="true">Live</option>
-            <option :value="false">Draft</option>
-          </select>
-        </div>
+        <PolarisSelect
+          label="Flow status"
+          required
+          :modelValue="pendingStatus"
+          @update:modelValue="pendingStatus = $event"
+          :options="[{ value: true, label: 'Live' }, { value: false, label: 'Draft' }]"
+          helpText="Select a status for all actions in your workflow"
+        />
 
         <div class="polaris-form-field">
           <label class="polaris-form-field__label">Run mode</label>
@@ -242,8 +239,8 @@
       </div>
 
       <div class="status-panel__footer">
-        <button class="polaris-btn polaris-btn--primary" @click="saveStatus">Save</button>
-        <button class="polaris-btn polaris-btn--default" @click="closeStatusPanel">Cancel</button>
+        <PolarisButton variant="primary" @click="saveStatus">Save</PolarisButton>
+        <PolarisButton @click="closeStatusPanel">Cancel</PolarisButton>
       </div>
     </div>
 
@@ -252,10 +249,10 @@
       <div class="batch-dialog">
         <p class="batch-dialog__message">Found <strong>{{ batchMatchingCount.toLocaleString() }}</strong> matching users. Run workflow for all of them?</p>
         <div class="batch-dialog__actions">
-          <button class="polaris-btn polaris-btn--default" @click="closeBatchConfirm">Cancel</button>
-          <button class="polaris-btn polaris-btn--primary" :disabled="batchDispatching" @click="confirmBatchDispatch">
+          <PolarisButton @click="closeBatchConfirm">Cancel</PolarisButton>
+          <PolarisButton variant="primary" :disabled="batchDispatching" @click="confirmBatchDispatch">
             {{ batchDispatching ? 'Dispatching...' : 'Confirm' }}
-          </button>
+          </PolarisButton>
         </div>
       </div>
     </div>
@@ -295,6 +292,11 @@ import ActionConfig from './components/ActionConfig.vue';
 import AgentConfig from './components/AgentConfig.vue';
 import NodeUserList from './components/NodeUserList.vue';
 import WorkflowSettings from './components/WorkflowSettings.vue';
+import {
+  PolarisButton,
+  PolarisSelect,
+  PolarisBanner,
+} from 'polaris-weweb-styles/components';
 
 // SVG Icons for node actions
 const EditIcon = () => h('svg', { 
@@ -692,6 +694,9 @@ export default {
     AgentConfig,
     NodeUserList,
     WorkflowSettings,
+    PolarisButton,
+    PolarisSelect,
+    PolarisBanner,
   },
   props: {
     uid: { type: String, required: true },
@@ -2820,25 +2825,6 @@ export default {
   padding: 16px;
 }
 
-.config-panel__errors {
-  margin-top: 12px;
-  padding: 12px;
-  background: #FEF2F2;
-  border: 1px solid #FECACA;
-  border-radius: 8px;
-  color: #991B1B;
-  font-size: 13px;
-
-  ul {
-    margin: 0;
-    padding-left: 16px;
-    list-style: disc;
-  }
-
-  li + li {
-    margin-top: 4px;
-  }
-}
 
 .config-panel__footer {
   display: flex;
@@ -2880,11 +2866,7 @@ export default {
   border-top: var(--p-border-width-025) solid var(--p-color-border);
 }
 
-// ============================================
-// Shared Polaris form + button classes
-// Used by config panel footer, status panel,
-// and any future panels for consistent styling.
-// ============================================
+// Status panel form field styles (radio group + batch checkbox wrapper)
 .polaris-form-field {
   display: flex;
   flex-direction: column;
@@ -2902,43 +2884,8 @@ export default {
     @include polaris-help-text;
     margin: 0;
   }
-
-  &__select {
-    @include polaris-select;
-  }
-
-  &__input {
-    @include polaris-input;
-  }
-
-  &__textarea {
-    @include polaris-textarea;
-  }
 }
 
-.polaris-btn {
-  @include polaris-button-base;
-
-  &--primary {
-    @include polaris-button-primary;
-  }
-
-  &--default {
-    @include polaris-button-default;
-  }
-
-  &--plain {
-    @include polaris-button-plain;
-  }
-
-  &--outline {
-    @include polaris-button-outline;
-  }
-
-  &--full-width {
-    @include polaris-button-full-width;
-  }
-}
 
 // ============================================
 // Batch Run + Radio/Checkbox + Toast
