@@ -2970,7 +2970,11 @@ export default {
 .config-panel__content {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: var(--p-space-400);
+  background: var(--p-color-bg-surface-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--p-space-400);
 }
 
 

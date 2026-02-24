@@ -1,6 +1,8 @@
 <template>
   <div class="trigger-config">
     <!-- Entry type toggle -->
+    <PolarisCard>
+      <PolarisCardSection>
     <div class="entry-type-selector">
       <span class="entry-type-selector__label">Entry type</span>
       <div class="entry-type-options">
@@ -26,9 +28,12 @@
         </label>
       </div>
     </div>
+      </PolarisCardSection>
+    </PolarisCard>
 
     <!-- Audience mode -->
-    <template v-if="entryType === 'audience'">
+    <PolarisCard v-if="entryType === 'audience'">
+      <PolarisCardSection>
       <PolarisSelect
         label="Select audience"
         required
@@ -47,16 +52,16 @@
       <PolarisBanner v-if="activeAudiences.length === 0" variant="info">
         No active audiences found. Create an audience first, then come back to set up this trigger.
       </PolarisBanner>
-    </template>
+      </PolarisCardSection>
+    </PolarisCard>
 
     <!-- Custom condition mode -->
-    <template v-if="entryType === 'condition'">
-      <ConditionConfig
-        :config="conditionConfig"
-        :collections="collections"
-        @update="handleConditionUpdate"
-      />
-    </template>
+    <ConditionConfig
+      v-if="entryType === 'condition'"
+      :config="conditionConfig"
+      :collections="collections"
+      @update="handleConditionUpdate"
+    />
   </div>
 </template>
 
@@ -66,11 +71,13 @@ import ConditionConfig from './ConditionConfig.vue';
 import {
   PolarisSelect,
   PolarisBanner,
+  PolarisCard,
+  PolarisCardSection,
 } from 'polaris-weweb-styles/components';
 
 export default {
   name: 'TriggerConfig',
-  components: { ConditionConfig, PolarisSelect, PolarisBanner },
+  components: { ConditionConfig, PolarisSelect, PolarisBanner, PolarisCard, PolarisCardSection },
   props: {
     config: { type: Object, required: true },
     collections: { type: Array, default: () => [] },

@@ -1,18 +1,23 @@
 <template>
   <div class="wf-settings">
     <!-- ═══ CONSTRAINTS ═══ -->
-    <section class="settings-section">
-      <h3 class="settings-section__title">Constraints</h3>
-      <p class="settings-section__help">Rules that limit how often or how much the workflow can act</p>
-      <ConstraintBuilder
-        :constraints="localConfig.constraints"
-        @update="handleConstraintsUpdate"
-      />
-    </section>
+    <PolarisCard>
+      <PolarisCardSection>
+        <div class="section-header">
+          <h3 class="section-header__title">Constraints</h3>
+          <p class="section-header__help">Rules that limit how often or how much the workflow can act</p>
+        </div>
+        <ConstraintBuilder
+          :constraints="localConfig.constraints"
+          @update="handleConstraintsUpdate"
+        />
+      </PolarisCardSection>
+    </PolarisCard>
 
     <!-- ═══ QUIET HOURS ═══ -->
-    <section class="settings-section">
-      <h3 class="settings-section__title">Quiet Hours</h3>
+    <PolarisCard>
+      <PolarisCardSection>
+        <h3 class="section-header__title">Quiet Hours</h3>
       <label class="toggle-row">
         <input type="checkbox" :checked="localConfig.quiet_hours?.enabled" @change="updateQuietHours('enabled', $event.target.checked)" />
         <span>Enable quiet hours</span>
@@ -40,12 +45,16 @@
           />
         </div>
       </template>
-    </section>
+      </PolarisCardSection>
+    </PolarisCard>
 
     <!-- ═══ BLACKOUT DATES ═══ -->
-    <section class="settings-section">
-      <h3 class="settings-section__title">Blackout Dates</h3>
-      <p class="settings-section__help">Dates when the AI agent will not execute any actions</p>
+    <PolarisCard>
+      <PolarisCardSection>
+        <div class="section-header">
+          <h3 class="section-header__title">Blackout Dates</h3>
+          <p class="section-header__help">Dates when the AI agent will not execute any actions</p>
+        </div>
 
       <div class="blackout-tags">
         <span v-for="(date, idx) in (localConfig.blackout_dates || [])" :key="date" class="blackout-tag">
@@ -60,11 +69,13 @@
         modelValue=""
         @update:modelValue="addBlackoutDate($event)"
       />
-    </section>
+      </PolarisCardSection>
+    </PolarisCard>
 
     <!-- ═══ CAMPAIGN KPI ═══ -->
-    <section class="settings-section">
-      <h3 class="settings-section__title">Campaign KPI</h3>
+    <PolarisCard>
+      <PolarisCardSection>
+        <h3 class="section-header__title">Campaign KPI</h3>
 
       <PolarisSelect
         label="Desired Outcome"
@@ -89,7 +100,8 @@
           </div>
         </div>
       </div>
-    </section>
+      </PolarisCardSection>
+    </PolarisCard>
   </div>
 </template>
 
@@ -99,6 +111,8 @@ import ConstraintBuilder from './ConstraintBuilder.vue';
 import {
   PolarisTextField,
   PolarisSelect,
+  PolarisCard,
+  PolarisCardSection,
 } from 'polaris-weweb-styles/components';
 
 const TIMEZONES = [
@@ -116,7 +130,7 @@ const OUTCOMES = [
 
 export default {
   name: 'WorkflowSettings',
-  components: { ConstraintBuilder, PolarisTextField, PolarisSelect },
+  components: { ConstraintBuilder, PolarisTextField, PolarisSelect, PolarisCard, PolarisCardSection },
   props: {
     config: { type: Object, default: () => ({}) },
   },
@@ -203,10 +217,11 @@ export default {
   gap: var(--p-space-500);
 }
 
-.settings-section {
+.section-header {
   display: flex;
   flex-direction: column;
-  gap: var(--p-space-300);
+  gap: var(--p-space-100);
+  margin-bottom: var(--p-space-200);
 
   &__title {
     font-size: var(--p-font-size-325);

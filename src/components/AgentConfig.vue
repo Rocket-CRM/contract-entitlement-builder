@@ -1,14 +1,18 @@
 <template>
   <div class="agent-config">
     <!-- Agent selector -->
-    <PolarisSelect
-      label="Agent"
-      required
-      :modelValue="config?.agent_config_id || ''"
-      @update:modelValue="selectAgent($event)"
-      :options="agentOptions"
-      placeholder="Select an agent..."
-    />
+    <PolarisCard>
+      <PolarisCardSection>
+        <PolarisSelect
+          label="Agent"
+          required
+          :modelValue="config?.agent_config_id || ''"
+          @update:modelValue="selectAgent($event)"
+          :options="agentOptions"
+          placeholder="Select an agent..."
+        />
+      </PolarisCardSection>
+    </PolarisCard>
 
     <!-- Selected agent summary -->
     <div v-if="selectedAgent" class="agent-summary">
@@ -60,6 +64,8 @@ import { computed, ref } from 'vue';
 import {
   PolarisSelect,
   PolarisBanner,
+  PolarisCard,
+  PolarisCardSection,
 } from 'polaris-weweb-styles/components';
 
 const AGENT_VARS = [
@@ -69,7 +75,7 @@ const AGENT_VARS = [
 
 export default {
   name: 'AgentConfig',
-  components: { PolarisSelect, PolarisBanner },
+  components: { PolarisSelect, PolarisBanner, PolarisCard, PolarisCardSection },
   props: {
     config: { type: Object, required: true },
     agents: { type: Array, default: () => [] },

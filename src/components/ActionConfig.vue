@@ -8,14 +8,22 @@
 
     <template v-else>
       <!-- Action Type Selector -->
-      <PolarisSelect
-        label="Action Type"
-        required
-        :modelValue="config?.action_type || config?.channel || ''"
-        @update:modelValue="handleActionTypeChange($event)"
-        :options="actionTypeOptions"
-        placeholder="Select action..."
-      />
+      <PolarisCard>
+        <PolarisCardSection>
+          <PolarisSelect
+            label="Action Type"
+            required
+            :modelValue="config?.action_type || config?.channel || ''"
+            @update:modelValue="handleActionTypeChange($event)"
+            :options="actionTypeOptions"
+            placeholder="Select action..."
+          />
+        </PolarisCardSection>
+      </PolarisCard>
+
+      <!-- Action-specific configuration -->
+      <PolarisCard v-if="activeType">
+        <PolarisCardSection>
 
       <!-- ═══ AWARD CURRENCY ═══ -->
       <template v-if="config?.action_type === 'award_currency'">
@@ -356,6 +364,9 @@
         />
       </template>
 
+        </PolarisCardSection>
+      </PolarisCard>
+
       <!-- ═══ VARIABLE REFERENCE ═══ -->
       <div v-if="activeType" class="variable-ref">
         <button class="variable-ref__toggle" @click="showVariables = !showVariables">
@@ -391,6 +402,8 @@ import {
   PolarisSelect,
   PolarisButton,
   PolarisInline,
+  PolarisCard,
+  PolarisCardSection,
 } from 'polaris-weweb-styles/components';
 
 const ACTION_GROUPS = [
@@ -469,6 +482,8 @@ export default {
     PolarisSelect,
     PolarisButton,
     PolarisInline,
+    PolarisCard,
+    PolarisCardSection,
   },
   props: {
     config: { type: Object, required: true },
