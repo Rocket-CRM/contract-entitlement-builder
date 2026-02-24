@@ -694,6 +694,19 @@ export default {
   display: flex;
   gap: var(--p-space-200);
   align-items: flex-end;
+
+  > div { min-width: 0; }
+
+  :deep(.polaris-text-field),
+  :deep(.polaris-select) {
+    min-height: 0;
+  }
+
+  :deep(select),
+  :deep(input) {
+    height: 36px;
+    box-sizing: border-box;
+  }
 }
 
 .condition-mode-toggle {

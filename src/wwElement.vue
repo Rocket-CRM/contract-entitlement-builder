@@ -52,7 +52,7 @@
     >
       <!-- Node Palette (visible when neither panel is open) -->
       <div v-if="!configPanelOpen && !settingsPanelOpen" class="node-palette">
-        <div class="palette-heading">Actions</div>
+        <div class="palette-heading">Add action</div>
         <div v-for="group in nodeGroups" :key="group.label" class="palette-group">
           <div class="palette-group__label">{{ group.label }}</div>
           <div
@@ -62,15 +62,12 @@
             draggable="true"
             @dragstart="onDragStart($event, nodeType)"
           >
-            <span class="palette-item__icon" :style="{ color: nodeType.color || getNodeColor(nodeType.type) }">{{ nodeType.icon }}</span>
-            <span class="palette-item__label">{{ nodeType.label }}</span>
-            <span class="palette-item__grip">
-              <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor">
-                <circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/>
-                <circle cx="2" cy="7" r="1.2"/><circle cx="6" cy="7" r="1.2"/>
-                <circle cx="2" cy="12" r="1.2"/><circle cx="6" cy="12" r="1.2"/>
-              </svg>
-            </span>
+            <span class="palette-item__icon" :style="{ '--icon-bg': (nodeType.color || getNodeColor(nodeType.type)) + '14', '--icon-color': nodeType.color || getNodeColor(nodeType.type) }">{{ nodeType.icon }}</span>
+            <div class="palette-item__text">
+              <span class="palette-item__label">{{ nodeType.label }}</span>
+              <span v-if="nodeType.desc" class="palette-item__desc">{{ nodeType.desc }}</span>
+            </div>
+            <svg class="palette-item__chevron" width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M7.293 4.293a1 1 0 0 1 1.414 0l5 5a1 1 0 0 1 0 1.414l-5 5a1 1 0 0 1-1.414-1.414L11.586 10 7.293 5.707a1 1 0 0 1 0-1.414z"/></svg>
           </div>
         </div>
       </div>
@@ -769,38 +766,37 @@ export default {
       },
     };
 
-    // Node palette grouped by category — each item is a specific action
     const nodeGroups = [
       {
         label: 'Messages',
         nodes: [
-          { type: 'action', subType: 'send_line', label: 'LINE Message', icon: '💬', color: '#06C755' },
-          { type: 'action', subType: 'send_sms', label: 'SMS', icon: '📱', color: '#10B981' },
+          { type: 'action', subType: 'send_line', label: 'LINE Message', desc: 'Send a LINE message to the user', icon: '💬', color: '#06C755' },
+          { type: 'action', subType: 'send_sms', label: 'SMS', desc: 'Send an SMS text message', icon: '📱', color: '#10B981' },
         ],
       },
       {
         label: 'Loyalty',
         nodes: [
-          { type: 'action', subType: 'award_currency', label: 'Award Currency', icon: '🪙', color: '#F59E0B' },
-          { type: 'action', subType: 'assign_tag', label: 'Assign Tag', icon: '🏷️', color: '#F59E0B' },
-          { type: 'action', subType: 'remove_tag', label: 'Remove Tag', icon: '🏷️', color: '#EF4444' },
-          { type: 'action', subType: 'assign_persona', label: 'Assign Persona', icon: '👤', color: '#F59E0B' },
-          { type: 'action', subType: 'assign_earn_factor', label: 'Assign Earn Factor', icon: '✨', color: '#F59E0B' },
-          { type: 'action', subType: 'submit_form', label: 'Submit Form', icon: '📋', color: '#F59E0B' },
+          { type: 'action', subType: 'award_currency', label: 'Award Currency', desc: 'Give points or tickets', icon: '🪙', color: '#F59E0B' },
+          { type: 'action', subType: 'assign_tag', label: 'Assign Tag', desc: 'Add a tag to the user', icon: '🏷️', color: '#F59E0B' },
+          { type: 'action', subType: 'remove_tag', label: 'Remove Tag', desc: 'Remove a tag from the user', icon: '🏷️', color: '#EF4444' },
+          { type: 'action', subType: 'assign_persona', label: 'Assign Persona', desc: 'Set the user persona', icon: '👤', color: '#F59E0B' },
+          { type: 'action', subType: 'assign_earn_factor', label: 'Earn Factor', desc: 'Assign a time-limited earn factor', icon: '✨', color: '#F59E0B' },
+          { type: 'action', subType: 'submit_form', label: 'Submit Form', desc: 'Auto-submit a form for the user', icon: '📋', color: '#F59E0B' },
         ],
       },
       {
         label: 'Integration',
         nodes: [
-          { type: 'action', subType: 'api_call', label: 'Webhook', icon: '🔗', color: '#8B5CF6' },
+          { type: 'action', subType: 'api_call', label: 'Webhook', desc: 'Call an external API', icon: '🔗', color: '#8B5CF6' },
         ],
       },
       {
         label: 'Logic',
         nodes: [
-          { type: 'wait', label: 'Time delay', icon: '⏱️' },
-          { type: 'condition', label: 'Conditional split', icon: '🔀' },
-          { type: 'agent', label: 'AI Agent', icon: '🤖' },
+          { type: 'wait', label: 'Time Delay', desc: 'Wait before continuing', icon: '⏱️', color: '#F59E0B' },
+          { type: 'condition', label: 'Conditional Split', desc: 'Branch based on conditions', icon: '🔀', color: '#3B82F6' },
+          { type: 'agent', label: 'AI Agent', desc: 'Let AI decide the next action', icon: '🤖', color: '#06B6D4' },
         ],
       },
     ];
@@ -2334,7 +2330,8 @@ export default {
   padding: 0 var(--p-space-400);
   height: 52px;
   background: var(--p-color-bg-surface);
-  border-bottom: var(--p-border-width-025) solid var(--p-color-border);
+  border-bottom: 1px solid var(--p-color-border);
+  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.04);
   z-index: 10;
 }
 
@@ -2456,26 +2453,27 @@ export default {
 .node-palette {
   display: flex;
   flex-direction: column;
-  padding: var(--p-space-400) 0;
+  padding: var(--p-space-300) var(--p-space-300);
   height: 100%;
   overflow-y: auto;
+  gap: var(--p-space-100);
 }
 
 .palette-heading {
   font-size: var(--p-font-size-350);
   font-weight: var(--p-font-weight-bold);
   color: var(--p-color-text);
-  padding: 0 var(--p-space-400) var(--p-space-200);
+  padding: var(--p-space-100) var(--p-space-200) var(--p-space-200);
 }
 
 .palette-group {
   &__label {
     font-size: var(--p-font-size-275);
-    font-weight: var(--p-font-weight-medium);
+    font-weight: var(--p-font-weight-semibold);
     color: var(--p-color-text-secondary);
-    padding: var(--p-space-300) var(--p-space-400) var(--p-space-100);
-    text-transform: none;
-    letter-spacing: 0;
+    padding: var(--p-space-200) var(--p-space-200) var(--p-space-100);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
   }
 }
 
@@ -2483,18 +2481,16 @@ export default {
   display: flex;
   align-items: center;
   gap: var(--p-space-300);
-  padding: var(--p-space-200) var(--p-space-400);
+  padding: var(--p-space-200) var(--p-space-200);
   cursor: grab;
-  transition: background 0.1s ease;
-  border-radius: 0;
-  min-height: 40px;
+  transition: background 0.15s ease;
+  border-radius: var(--p-border-radius-200);
+  min-height: 48px;
 
   &:hover {
     background: var(--p-color-bg-surface-hover);
 
-    .palette-item__grip {
-      opacity: 1;
-    }
+    .palette-item__chevron { opacity: 1; }
   }
 
   &:active {
@@ -2503,29 +2499,47 @@ export default {
   }
 
   &__icon {
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 16px;
     flex-shrink: 0;
+    border-radius: var(--p-border-radius-200);
+    background: var(--icon-bg, var(--p-color-bg-fill-secondary));
+    color: var(--icon-color, var(--p-color-text));
+  }
+
+  &__text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
   }
 
   &__label {
-    flex: 1;
-    font-size: var(--p-font-size-325);
-    font-weight: var(--p-font-weight-regular);
+    font-size: var(--p-font-size-300);
+    font-weight: var(--p-font-weight-semibold);
     color: var(--p-color-text);
-    line-height: var(--p-font-line-height-400);
+    line-height: var(--p-font-line-height-300);
   }
 
-  &__grip {
+  &__desc {
+    font-size: var(--p-font-size-275);
+    color: var(--p-color-text-secondary);
+    line-height: var(--p-font-line-height-300);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__chevron {
     flex-shrink: 0;
     color: var(--p-color-icon-secondary);
     opacity: 0;
-    transition: opacity 0.1s ease;
-    display: flex;
+    transition: opacity 0.15s ease;
     align-items: center;
     padding: 0 var(--p-space-050);
   }
@@ -3047,6 +3061,7 @@ export default {
     margin-top: 2px;
     cursor: pointer;
     flex-shrink: 0;
+    accent-color: var(--p-color-bg-fill-brand, #2C6ECB);
   }
 
   &__label {
@@ -3076,6 +3091,7 @@ export default {
     width: 16px;
     height: 16px;
     cursor: pointer;
+    accent-color: var(--p-color-bg-fill-brand, #2C6ECB);
   }
 }
 
