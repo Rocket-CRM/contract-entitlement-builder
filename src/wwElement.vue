@@ -346,14 +346,17 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import 'polaris-weweb-styles';
+
 .earn-studio {
-  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #303030;
+  @include polaris-tokens;
+  font-family: var(--p-font-family-sans);
+  color: var(--p-color-text);
   background: #F8FAFC;
   width: 100%;
   height: 100%;
   overflow: auto;
-  padding: 0 24px 64px;
+  padding: 0 var(--p-space-600) 64px;
 
   &__layout {
     display: flex;
@@ -375,41 +378,24 @@ export default {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 24px 0 20px;
+    padding: var(--p-space-600) 0 var(--p-space-500);
   }
 
   &__title {
-    font-family: Inter, sans-serif;
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 20px;
-    color: #303030;
+    @include polaris-text-title;
     margin: 0;
   }
 
   &__primary-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 28px;
-    padding: 0 12px;
-    background: #303030;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-family: Inter, sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: inset 0 -1px 0 1px rgba(0,0,0,0.1), inset 0 1px 0 0 rgba(255,255,255,0.1);
-    transition: background 0.15s;
-    &:hover { background: #1a1a1a; }
+    @include polaris-button-primary;
+    @include polaris-button-slim;
+    font-size: var(--p-font-size-300);
   }
 
   &__col-body {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: var(--p-space-600);
   }
 
   &__svg {
@@ -424,30 +410,25 @@ export default {
   &__loading {
     display: flex;
     justify-content: center;
-    padding: 48px 0;
+    padding: var(--p-space-1200) 0;
   }
 
   &__spinner {
-    width: 24px;
-    height: 24px;
-    border: 2.5px solid #EBEDEF;
-    border-top-color: #303030;
-    border-radius: 50%;
-    animation: espin 0.7s linear infinite;
+    @include polaris-spinner;
   }
 
   &__empty {
-    font-size: 13px;
-    color: #8C9196;
+    @include polaris-text-description;
     text-align: center;
-    padding: 40px 16px;
-    border: 2px dashed #EBEDEF;
-    border-radius: 8px;
+    padding: var(--p-space-1000) var(--p-space-400);
+    border: 2px dashed var(--p-color-border);
+    border-radius: var(--p-border-radius-200);
+    color: var(--p-color-text-disabled);
   }
 }
 
-@keyframes espin { to { transform: rotate(360deg); } }
+@keyframes polaris-spin { to { transform: rotate(360deg); } }
 
-.slide-enter-active, .slide-leave-active { transition: transform 0.25s cubic-bezier(0.25,0.1,0.25,1); }
+.slide-enter-active, .slide-leave-active { transition: transform var(--p-motion-duration-300) var(--p-motion-ease); }
 .slide-enter-from, .slide-leave-to { transform: translateX(100%); }
 </style>
