@@ -27,8 +27,8 @@
         </div>
       </div>
 
-      <!-- SVG CONNECTIONS -->
-      <svg class="earn-studio__svg" ref="svgRef" :viewBox="`0 0 ${svgW} ${svgH}`" preserveAspectRatio="none">
+      <!-- SVG CONNECTIONS (absolute overlay) -->
+      <svg class="earn-studio__svg" ref="svgRef">
         <path
           v-for="ln in lines"
           :key="ln.key"
@@ -225,47 +225,42 @@ export default {
 
     function rebuildLines() {
       const layout = layoutRef.value;
-      if (!layout) return;
-      const lr = layout.getBoundingClientRect();
-      const lc = leftColRef.value, rc = rightColRef.value;
-      if (!lc || !rc) return;
+      const svg = svgRef.value;
+      if (!layout || !svg) return;
 
-      const lcr = lc.getBoundingClientRect();
-      const rcr = rc.getBoundingClientRect();
-      const x1Global = lcr.right;
-      const x2Global = rcr.left;
-
-      svgW.value = Math.max(x2Global - x1Global, 40);
+      const layoutRect = layout.getBoundingClientRect();
       const newLines = [];
       const allF = Object.values(factorsByGroup.value || {}).flat();
-      let maxY = 0;
 
       for (const f of allF) {
         const cid = f?.earn_conditions_group_id;
         if (!cid) continue;
+
         const fEl = factorRefs[f.id];
         if (!fEl) continue;
 
         const dk = `${cid}__${f.id}`;
         const rEl = rightCardRefs[dk] || dotRefs[dk];
 
-        const fR = fEl.getBoundingClientRect();
-        const y1 = fR.top + fR.height / 2 - lr.top;
+        const fRect = fEl.getBoundingClientRect();
+        const x1 = fRect.right - layoutRect.left;
+        const y1 = fRect.top + fRect.height / 2 - layoutRect.top;
 
+        let x2 = layoutRect.width;
         let y2 = y1;
         if (rEl) {
-          const rR = rEl.getBoundingClientRect();
-          y2 = rR.top + Math.min(rR.height / 2, 28) - lr.top;
+          const rRect = rEl.getBoundingClientRect();
+          x2 = rRect.left - layoutRect.left;
+          y2 = rRect.top + Math.min(rRect.height / 2, 24) - layoutRect.top;
         }
 
-        const w = svgW.value;
-        const d = `M 0 ${y1} C ${w * 0.35} ${y1}, ${w * 0.65} ${y2}, ${w} ${y2}`;
+        const dx = x2 - x1;
+        const cp = dx * 0.4;
+        const d = `M ${x1} ${y1} C ${x1 + cp} ${y1}, ${x2 - cp} ${y2}, ${x2} ${y2}`;
         newLines.push({ key: `${f.id}__${cid}`, d, dashed: false });
-        maxY = Math.max(maxY, y1, y2);
       }
 
       lines.value = newLines;
-      svgH.value = Math.max(maxY + 40, lr.height);
     }
 
     function handleAddFactor(g) { editingFactor.value = { earn_factor_type: 'rate', public: true, target_currency: 'points', active_status: true }; editingGroupId.value = g?.id; panel.value = 'factor'; }
@@ -343,7 +338,7 @@ export default {
       loadingFactorGroups, loadingConditionGroups,
       expandedLeft, expandedRight, panel, editingFactor, editingGroupId, editingCondGroup,
       showModal, modalType, hoveredLine, connectPopup,
-      rightEntries, lines, svgW, svgH,
+      rightEntries, lines,
       registerFactorRef, registerPillRef, registerRightCardRef,
       handleAddFactor, handleEditFactor, handleEditFactorGroup, handleEditConditionGroup,
       openCreateFactorGroup, openCreateConditionGroup, handleModalSave,
@@ -379,6 +374,7 @@ export default {
   &__col {
     flex-shrink: 0;
     z-index: 2;
+    position: relative;
 
     &--left { width: 580px; }
     &--right { width: 500px; }
@@ -409,12 +405,18 @@ export default {
   }
 
   &__svg {
-    flex: 1;
-    min-width: 60px;
-    max-width: 260px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     z-index: 1;
+    pointer-events: none;
     overflow: visible;
-    align-self: stretch;
+
+    path {
+      pointer-events: stroke;
+    }
   }
 
   &__loading {
