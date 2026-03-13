@@ -106,13 +106,14 @@ export default {
     group: { type: Object, default: () => ({}) },
     factors: { type: Array, default: () => [] },
     selectedFactorId: { type: String, default: null },
+    expanded: { type: Boolean, default: true },
   },
-  emits: ['add-factor', 'edit-group', 'edit-factor', 'select-factor', 'connect-factor', 'factor-ref'],
+  emits: ['add-factor', 'edit-group', 'edit-factor', 'select-factor', 'connect-factor', 'factor-ref', 'toggle-expand'],
   setup(props, { emit }) {
-    const isExpanded = ref(true);
+    const isExpanded = computed(() => props.expanded);
 
     function toggleExpand() {
-      isExpanded.value = !isExpanded.value;
+      emit('toggle-expand', props.group?.id);
     }
 
     const linkedConditionCount = computed(() => {

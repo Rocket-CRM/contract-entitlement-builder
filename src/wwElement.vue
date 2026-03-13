@@ -15,8 +15,8 @@
               :key="g?.id"
               :group="g"
               :factors="factorsByGroup[g?.id] || []"
-              :expanded="!!expandedLeft[g?.id]"
-              @toggle-expand="id => { expandedLeft[id] = !expandedLeft[id]; scheduleLineUpdate(); }"
+              :expanded="expandedLeft[g?.id] !== false"
+              @toggle-expand="id => { expandedLeft[id] = expandedLeft[id] === false ? true : false; scheduleLineUpdate(); }"
               @add-factor="handleAddFactor"
               @edit-group="handleEditFactorGroup"
               @edit-factor="handleEditFactor"
@@ -58,12 +58,12 @@
               :group="entry.group"
               :conditions="entry.conditions"
               :linked-factor-count="entry.linkedCount"
-              :expanded="!!expandedRight[entry.dk]"
+              :is-active="!!expandedRight[entry.dk]"
               :display-key="entry.dk"
-              @toggle-expand="dk => { expandedRight[dk] = !expandedRight[dk]; scheduleLineUpdate(); }"
+              @select-group="(g, dk) => { expandedRight[dk] = !expandedRight[dk]; scheduleLineUpdate(); }"
               @add-condition="g => handleEditConditionGroup(g)"
               @edit-group="handleEditConditionGroup"
-              @dot-ref="registerDotRef"
+              @pill-ref="registerPillRef"
               :ref="el => registerRightCardRef(entry.dk, el)"
             />
             <div v-if="!rightEntries?.length" class="earn-studio__empty">No condition groups yet.</div>
@@ -177,6 +177,8 @@ export default {
       await Promise.all([loadFactorGroups(), loadCondGroups(), loadEntities()]);
       emit('trigger-event', { name: 'data-loaded', event: { factorGroupCount: factorGroups.value?.length, conditionGroupCount: allCondGroups.value?.length } });
       scheduleLineUpdate();
+      setTimeout(scheduleLineUpdate, 200);
+      setTimeout(scheduleLineUpdate, 500);
     }
 
     async function loadFactorGroups() {
@@ -204,9 +206,17 @@ export default {
     async function loadEntities() { try { entityOptions.value = await api.fetchEntityOptions() || []; } catch (e) { err('Load entities failed', e); } }
     function err(m, e) { console.error(m, e); emit('trigger-event', { name: 'error', event: { message: m, code: 'ERR' } }); }
 
-    function registerFactorRef({ factorId, el }) { factorRefs[factorId] = el; scheduleLineUpdate(); }
-    function registerDotRef({ groupId, displayKey, el }) { if (el) dotRefs[displayKey || groupId] = el; scheduleLineUpdate(); }
-    function registerRightCardRef(dk, comp) { if (comp?.$el) rightCardRefs[dk] = comp.$el; scheduleLineUpdate(); }
+    function registerFactorRef({ factorId, el }) {
+      if (el && factorId) { factorRefs[factorId] = el; scheduleLineUpdate(); }
+    }
+    function registerPillRef({ groupId, displayKey, el }) {
+      const key = displayKey || groupId;
+      if (el && key) { dotRefs[key] = el; rightCardRefs[key] = el; scheduleLineUpdate(); }
+    }
+    function registerRightCardRef(dk, comp) {
+      const el = comp?.$el || comp;
+      if (el && dk) { rightCardRefs[dk] = el; scheduleLineUpdate(); }
+    }
 
     function scheduleLineUpdate() {
       clearTimeout(lineTimer);
@@ -334,7 +344,7 @@ export default {
       expandedLeft, expandedRight, panel, editingFactor, editingGroupId, editingCondGroup,
       showModal, modalType, hoveredLine, connectPopup,
       rightEntries, lines, svgW, svgH,
-      registerFactorRef, registerDotRef, registerRightCardRef,
+      registerFactorRef, registerPillRef, registerRightCardRef,
       handleAddFactor, handleEditFactor, handleEditFactorGroup, handleEditConditionGroup,
       openCreateFactorGroup, openCreateConditionGroup, handleModalSave,
       saveFactorConfig, saveCondGroupConfig, handleConnectSelect,
