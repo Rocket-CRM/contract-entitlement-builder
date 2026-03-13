@@ -1,99 +1,78 @@
 <template>
-  <div class="earn-studio" :style="rootStyles" ref="rootRef">
-    <div class="earn-studio__columns" ref="columnsRef">
-      <!-- Left Column: Earn Factor Groups -->
-      <div class="earn-studio__column earn-studio__column--left" :style="{ width: content?.leftColumnWidth || '420px' }">
-        <div class="earn-studio__column-header">
-          <h2 class="earn-studio__column-title">Earn factor group</h2>
+  <div class="earn-studio" ref="rootRef">
+    <div class="earn-studio__layout" ref="layoutRef">
+
+      <!-- LEFT COLUMN: Earn Factor Groups + Factor Pills -->
+      <div class="earn-studio__col earn-studio__col--left" :style="{ width: content?.leftColumnWidth || '380px' }">
+        <div class="earn-studio__col-header">
+          <h2 class="earn-studio__col-title">Earn factor group</h2>
           <button class="earn-studio__create-btn" @click="openCreateFactorGroup">Create</button>
         </div>
-        <div class="earn-studio__column-body">
-          <div v-if="loadingFactorGroups" class="earn-studio__loading">
-            <div class="earn-studio__spinner"></div>
-          </div>
-          <EarnFactorGroupCard
-            v-for="group in factorGroups"
-            :key="group?.id"
-            :group="group"
-            :factors="factorsByGroup[group?.id] || []"
-            :expanded="expandedFactorGroups[group?.id] || false"
-            @toggle-expand="toggleFactorGroupExpand"
-            @add-factor="handleAddFactor"
-            @edit-group="handleEditFactorGroup"
-            @edit-factor="handleEditFactor"
-            @connect-factor="handleConnectFactor"
-            @factor-ref="registerFactorRef"
-            class="earn-studio__card"
-          />
-          <div v-if="!loadingFactorGroups && !factorGroups?.length" class="earn-studio__empty">
-            No earn factor groups yet. Click "Create" to get started.
-          </div>
+        <div class="earn-studio__col-scroll" ref="leftScrollRef">
+          <div v-if="loadingFactorGroups" class="earn-studio__loading"><div class="earn-studio__spinner"></div></div>
+          <template v-else>
+            <EarnFactorGroupCard
+              v-for="group in factorGroups"
+              :key="group?.id"
+              :group="group"
+              :factors="factorsByGroup[group?.id] || []"
+              :selected-factor-id="selectedFactorId"
+              @add-factor="handleAddFactor"
+              @edit-group="handleEditFactorGroup"
+              @edit-factor="handleEditFactor"
+              @select-factor="handleSelectFactor"
+              @connect-factor="handleConnectFactor"
+              @factor-ref="registerFactorRef"
+            />
+            <div v-if="!factorGroups?.length" class="earn-studio__empty">
+              No earn factor groups yet.
+            </div>
+          </template>
         </div>
       </div>
 
-      <!-- Connection Lines SVG -->
-      <div class="earn-studio__connections" ref="connectionsRef">
-        <svg class="earn-studio__svg" :width="connectionAreaWidth" :height="connectionAreaHeight">
-          <line
-            v-for="conn in connectionLines"
-            :key="conn.key"
-            :x1="conn.x1"
-            :y1="conn.y1"
-            :x2="conn.x2"
-            :y2="conn.y2"
-            :stroke="hoveredConnectionKey === conn.key ? (content?.connectionLineActiveColor || '#005BD3') : (content?.connectionLineColor || '#C9CCCF')"
-            stroke-width="2"
-            :stroke-dasharray="conn.dashed ? '6 4' : 'none'"
-            class="earn-studio__connection-line"
-            @mouseenter="hoveredConnectionKey = conn.key"
-            @mouseleave="hoveredConnectionKey = null"
-          />
-          <circle
-            v-for="conn in connectionLines"
-            :key="'dot-l-' + conn.key"
-            :cx="conn.x1"
-            :cy="conn.y1"
-            r="4"
-            :fill="content?.connectionLineColor || '#C9CCCF'"
-          />
-          <circle
-            v-for="conn in connectionLines"
-            :key="'dot-r-' + conn.key"
-            :cx="conn.x2"
-            :cy="conn.y2"
-            r="4"
-            :fill="content?.connectionLineColor || '#C9CCCF'"
-          />
-        </svg>
-      </div>
+      <!-- MIDDLE: Connection Lines -->
+      <svg class="earn-studio__svg" ref="svgRef" :viewBox="`0 0 ${svgWidth} ${svgHeight}`" :width="svgWidth" :height="svgHeight">
+        <path
+          v-for="line in connectionLines"
+          :key="line.key"
+          :d="line.path"
+          fill="none"
+          :stroke="hoveredLineKey === line.key ? (content?.connectionLineActiveColor || '#005BD3') : (content?.connectionLineColor || '#C9CCCF')"
+          :stroke-width="hoveredLineKey === line.key ? 2.5 : 1.5"
+          :stroke-dasharray="line.dashed ? '5 3' : 'none'"
+          class="earn-studio__line"
+          @mouseenter="hoveredLineKey = line.key"
+          @mouseleave="hoveredLineKey = null"
+        />
+      </svg>
 
-      <!-- Right Column: Earn Condition Groups -->
-      <div class="earn-studio__column earn-studio__column--right" :style="{ width: content?.rightColumnWidth || '420px' }">
-        <div class="earn-studio__column-header">
-          <h2 class="earn-studio__column-title">Earn Conditions group</h2>
+      <!-- RIGHT COLUMN: Earn Condition Group Pills -->
+      <div class="earn-studio__col earn-studio__col--right" :style="{ width: content?.rightColumnWidth || '380px' }">
+        <div class="earn-studio__col-header">
+          <h2 class="earn-studio__col-title">Earn Conditions group</h2>
           <button class="earn-studio__create-btn" @click="openCreateConditionGroup">Create</button>
         </div>
-        <div class="earn-studio__column-body">
-          <div v-if="loadingConditionGroups" class="earn-studio__loading">
-            <div class="earn-studio__spinner"></div>
-          </div>
-          <EarnConditionGroupCard
-            v-for="cgEntry in displayedConditionGroups"
-            :key="cgEntry.displayKey"
-            :group="cgEntry.group"
-            :conditions="cgEntry.conditions || []"
-            :linked-factor-count="cgEntry.linkedFactorCount"
-            :expanded="expandedConditionGroups[cgEntry.displayKey] || false"
-            @toggle-expand="toggleConditionGroupExpand(cgEntry.displayKey)"
-            @add-condition="handleAddCondition(cgEntry.group)"
-            @edit-group="handleEditConditionGroup"
-            @dot-ref="registerDotRef"
-            class="earn-studio__card"
-            :ref="el => registerConditionCardRef(cgEntry.displayKey, el)"
-          />
-          <div v-if="!loadingConditionGroups && !displayedConditionGroups?.length" class="earn-studio__empty">
-            No earn condition groups yet. Click "Create" to get started.
-          </div>
+        <div class="earn-studio__col-scroll" ref="rightScrollRef">
+          <div v-if="loadingConditionGroups" class="earn-studio__loading"><div class="earn-studio__spinner"></div></div>
+          <template v-else>
+            <template v-for="entry in rightColumnEntries" :key="entry.displayKey">
+              <EarnConditionGroupCard
+                :group="entry.group"
+                :conditions="entry.conditions"
+                :linked-factor-count="entry.linkedFactorCount"
+                :is-active="activeConditionKey === entry.displayKey"
+                :display-key="entry.displayKey"
+                @select-group="(g, dk) => toggleConditionDetail(dk)"
+                @add-condition="handleAddCondition"
+                @edit-group="handleEditConditionGroup"
+                @pill-ref="registerConditionPillRef"
+              />
+            </template>
+            <div v-if="!rightColumnEntries?.length" class="earn-studio__empty">
+              No earn condition groups yet.
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -111,7 +90,6 @@
         @save="saveFactorConfig"
       />
     </transition>
-
     <transition name="slide-right">
       <EarnConditionGroupConfig
         v-if="activePanel === 'condition-config'"
@@ -130,7 +108,6 @@
       @close="showCreateModal = false"
       @save="handleCreateGroupSave"
     />
-
     <ConnectPopup
       v-if="connectPopup.open"
       :condition-groups="allConditionGroupsList"
@@ -142,7 +119,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, watch, nextTick, onBeforeUnmount } from 'vue';
 import { useApi } from './useApi.js';
 import EarnFactorGroupCard from './components/EarnFactorGroupCard.vue';
 import EarnConditionGroupCard from './components/EarnConditionGroupCard.vue';
@@ -152,14 +129,7 @@ import CreateGroupModal from './components/CreateGroupModal.vue';
 import ConnectPopup from './components/ConnectPopup.vue';
 
 export default {
-  components: {
-    EarnFactorGroupCard,
-    EarnConditionGroupCard,
-    EarnFactorConfig,
-    EarnConditionGroupConfig,
-    CreateGroupModal,
-    ConnectPopup,
-  },
+  components: { EarnFactorGroupCard, EarnConditionGroupCard, EarnFactorConfig, EarnConditionGroupConfig, CreateGroupModal, ConnectPopup },
   props: {
     uid: { type: String, required: true },
     content: { type: Object, required: true },
@@ -172,48 +142,42 @@ export default {
     const api = useApi(props);
 
     const rootRef = ref(null);
-    const columnsRef = ref(null);
-    const connectionsRef = ref(null);
+    const layoutRef = ref(null);
+    const svgRef = ref(null);
+    const leftScrollRef = ref(null);
+    const rightScrollRef = ref(null);
 
-    // Data
     const factorGroups = ref([]);
     const factorsByGroup = ref({});
     const allConditionGroupsList = ref([]);
-    const conditionGroupDetailsCache = ref({});
+    const conditionDetailsCache = ref({});
     const allEntityOptions = ref([]);
     const ticketTypes = ref([]);
     const loadingFactorGroups = ref(false);
     const loadingConditionGroups = ref(false);
 
-    // UI State
-    const expandedFactorGroups = ref({});
-    const expandedConditionGroups = ref({});
     const activePanel = ref(null);
     const editingFactor = ref(null);
     const editingFactorGroupId = ref(null);
     const editingConditionGroup = ref(null);
     const showCreateModal = ref(false);
     const createModalType = ref('factor');
-    const hoveredConnectionKey = ref(null);
+    const selectedFactorId = ref(null);
+    const activeConditionKey = ref(null);
+    const hoveredLineKey = ref(null);
+    const connectPopup = ref({ open: false, position: null, factorId: null, factorGroupId: null });
 
-    const connectPopup = ref({ open: false, position: null, factorId: null });
+    const factorPillRefs = ref({});
+    const conditionPillRefs = ref({});
 
-    // Refs for connection lines
-    const factorElRefs = ref({});
-    const conditionDotRefs = ref({});
-    const conditionCardRefs = ref({});
-
-    // Connection line geometry
     const connectionLines = ref([]);
-    const connectionAreaWidth = ref(120);
-    const connectionAreaHeight = ref(800);
+    const svgWidth = ref(120);
+    const svgHeight = ref(600);
 
-    const rootStyles = computed(() => ({
-      '--p-earn-studio-font-family': 'var(--p-font-family-sans)',
-    }));
+    let resizeObserver = null;
 
-    // Build displayed condition groups with duplication
-    const displayedConditionGroups = computed(() => {
+    // ─── Right column: build entries with duplication rule ───
+    const rightColumnEntries = computed(() => {
       const groups = allConditionGroupsList.value || [];
       const allFactors = Object.values(factorsByGroup.value || {}).flat();
       const result = [];
@@ -225,14 +189,12 @@ export default {
         const group = groups.find(g => g?.id === cgId);
         if (!group) continue;
         usedGroupIds.add(cgId);
-
-        const linkedCount = allFactors.filter(f => f?.earn_conditions_group_id === cgId).length;
-        const details = conditionGroupDetailsCache.value[cgId];
+        const details = conditionDetailsCache.value[cgId];
         result.push({
-          displayKey: `${cgId}_${factor.id}`,
+          displayKey: `${cgId}__${factor.id}`,
           group,
           conditions: details?.conditions || group?.conditions || [],
-          linkedFactorCount: linkedCount,
+          linkedFactorCount: allFactors.filter(f => f?.earn_conditions_group_id === cgId).length,
           factorId: factor.id,
         });
       }
@@ -242,94 +204,136 @@ export default {
           result.push({
             displayKey: group.id,
             group,
-            conditions: conditionGroupDetailsCache.value[group.id]?.conditions || group?.conditions || [],
+            conditions: conditionDetailsCache.value[group.id]?.conditions || group?.conditions || [],
             linkedFactorCount: 0,
             factorId: null,
           });
         }
       }
-
       return result;
     });
 
-    // Data Loading
+    // ─── Data Loading ───
     async function loadAll() {
-      await Promise.all([
-        loadFactorGroups(),
-        loadConditionGroups(),
-        loadEntityOptions(),
-      ]);
+      await Promise.all([loadFactorGroups(), loadConditionGroups(), loadEntityOptions()]);
       emit('trigger-event', {
         name: 'data-loaded',
-        event: {
-          factorGroupCount: factorGroups.value?.length || 0,
-          conditionGroupCount: allConditionGroupsList.value?.length || 0,
-        },
+        event: { factorGroupCount: factorGroups.value?.length || 0, conditionGroupCount: allConditionGroupsList.value?.length || 0 },
       });
+      nextTick(() => { requestAnimationFrame(rebuildLines); });
     }
 
     async function loadFactorGroups() {
       loadingFactorGroups.value = true;
       try {
         factorGroups.value = await api.fetchEarnFactorGroups() || [];
+        const newMap = {};
         for (const g of factorGroups.value) {
-          if (g?.id) {
-            const factors = await api.fetchFactorsByGroup(g.id);
-            factorsByGroup.value[g.id] = factors || [];
-          }
+          if (g?.id) newMap[g.id] = await api.fetchFactorsByGroup(g.id) || [];
         }
-      } catch (e) {
-        emitError('Failed to load earn factor groups', e);
-      } finally {
-        loadingFactorGroups.value = false;
-      }
+        factorsByGroup.value = newMap;
+      } catch (e) { emitError('Failed to load earn factor groups', e); }
+      finally { loadingFactorGroups.value = false; }
     }
 
     async function loadConditionGroups() {
       loadingConditionGroups.value = true;
       try {
-        const result = await api.fetchAllConditionGroups();
-        allConditionGroupsList.value = result || [];
+        allConditionGroupsList.value = await api.fetchAllConditionGroups() || [];
+        const newCache = {};
         for (const g of allConditionGroupsList.value) {
-          if (g?.id) {
-            try {
-              const details = await api.fetchConditionGroupDetails(g.id);
-              conditionGroupDetailsCache.value[g.id] = details;
-            } catch { /* skip */ }
-          }
+          if (g?.id) { try { newCache[g.id] = await api.fetchConditionGroupDetails(g.id); } catch {} }
         }
-      } catch (e) {
-        emitError('Failed to load condition groups', e);
-      } finally {
-        loadingConditionGroups.value = false;
-      }
+        conditionDetailsCache.value = newCache;
+      } catch (e) { emitError('Failed to load condition groups', e); }
+      finally { loadingConditionGroups.value = false; }
     }
 
     async function loadEntityOptions() {
-      try {
-        allEntityOptions.value = await api.fetchEntityOptions() || [];
-      } catch (e) {
-        emitError('Failed to load entity options', e);
+      try { allEntityOptions.value = await api.fetchEntityOptions() || []; } catch (e) { emitError('Failed to load entity options', e); }
+    }
+
+    function emitError(msg, err) {
+      console.error(msg, err);
+      emit('trigger-event', { name: 'error', event: { message: msg, code: 'LOAD_ERROR' } });
+    }
+
+    // ─── Connection Lines ───
+    function registerFactorRef({ factorId, el }) {
+      factorPillRefs.value[factorId] = el;
+      nextTick(() => requestAnimationFrame(rebuildLines));
+    }
+
+    function registerConditionPillRef({ groupId, displayKey, el }) {
+      if (el) conditionPillRefs.value[displayKey] = el;
+      nextTick(() => requestAnimationFrame(rebuildLines));
+    }
+
+    function rebuildLines() {
+      const layout = layoutRef.value;
+      if (!layout) return;
+      const layoutRect = layout.getBoundingClientRect();
+
+      const leftCol = leftScrollRef.value;
+      const rightCol = rightScrollRef.value;
+      if (!leftCol || !rightCol) return;
+
+      const leftColRect = leftCol.getBoundingClientRect();
+      const rightColRect = rightCol.getBoundingClientRect();
+
+      const gapLeft = leftColRect.right - layoutRect.left;
+      const gapRight = rightColRect.left - layoutRect.left;
+      const gapW = gapRight - gapLeft;
+
+      svgWidth.value = Math.max(gapW, 40);
+
+      const lines = [];
+      const allFactors = Object.values(factorsByGroup.value || {}).flat();
+      let maxY = 0;
+
+      for (const factor of allFactors) {
+        const cgId = factor?.earn_conditions_group_id;
+        if (!cgId) continue;
+
+        const factorEl = factorPillRefs.value[factor.id];
+        const displayKey = `${cgId}__${factor.id}`;
+        const condEl = conditionPillRefs.value[displayKey];
+
+        if (!factorEl) continue;
+
+        const fRect = factorEl.getBoundingClientRect();
+        const y1 = fRect.top + fRect.height / 2 - layoutRect.top;
+
+        let y2 = y1;
+        if (condEl) {
+          const cRect = condEl.getBoundingClientRect();
+          y2 = cRect.top + cRect.height / 2 - layoutRect.top;
+        }
+
+        const x1 = 0;
+        const x2 = svgWidth.value;
+        const cpx1 = x1 + gapW * 0.4;
+        const cpx2 = x2 - gapW * 0.4;
+        const path = `M ${x1} ${y1} C ${cpx1} ${y1}, ${cpx2} ${y2}, ${x2} ${y2}`;
+
+        lines.push({ key: `${factor.id}__${cgId}`, path, factorId: factor.id, conditionGroupId: cgId, dashed: false });
+        maxY = Math.max(maxY, y1, y2);
       }
+
+      connectionLines.value = lines;
+      svgHeight.value = Math.max(maxY + 40, layoutRect.height);
     }
 
-    function emitError(message, error) {
-      console.error(message, error);
-      emit('trigger-event', { name: 'error', event: { message, code: 'LOAD_ERROR' } });
+    // ─── UI handlers ───
+    function handleSelectFactor(factor) {
+      selectedFactorId.value = selectedFactorId.value === factor?.id ? null : factor?.id;
     }
 
-    // Expand/Collapse
-    function toggleFactorGroupExpand(groupId) {
-      expandedFactorGroups.value[groupId] = !expandedFactorGroups.value[groupId];
-      nextTick(updateConnectionLines);
+    function toggleConditionDetail(displayKey) {
+      activeConditionKey.value = activeConditionKey.value === displayKey ? null : displayKey;
+      nextTick(() => requestAnimationFrame(rebuildLines));
     }
 
-    function toggleConditionGroupExpand(displayKey) {
-      expandedConditionGroups.value[displayKey] = !expandedConditionGroups.value[displayKey];
-      nextTick(updateConnectionLines);
-    }
-
-    // Panel Management
     function closePanel() {
       activePanel.value = null;
       editingFactor.value = null;
@@ -350,288 +354,106 @@ export default {
     }
 
     function handleEditFactorGroup(group) {
-      editingFactor.value = null;
-      showCreateModal.value = false;
-      editingFactorGroupId.value = group?.id;
-      activePanel.value = null;
-      // For now, reuse the create modal logic - can be enhanced
       createModalType.value = 'factor';
       showCreateModal.value = true;
     }
 
-    function handleAddCondition(group) {
-      handleEditConditionGroup(group);
-    }
+    function handleAddCondition(group) { handleEditConditionGroup(group); }
 
     async function handleEditConditionGroup(group) {
       try {
-        if (group?.id) {
-          const details = await api.fetchConditionGroupDetails(group.id);
-          editingConditionGroup.value = details;
-        } else {
-          editingConditionGroup.value = { id: null, name: '', conditions: [] };
-        }
-      } catch {
-        editingConditionGroup.value = { ...group, conditions: group?.conditions || [] };
-      }
+        editingConditionGroup.value = group?.id ? await api.fetchConditionGroupDetails(group.id) : { id: null, name: '', conditions: [] };
+      } catch { editingConditionGroup.value = { ...group, conditions: group?.conditions || [] }; }
       activePanel.value = 'condition-config';
     }
 
-    // Create Modals
-    function openCreateFactorGroup() {
-      createModalType.value = 'factor';
-      showCreateModal.value = true;
-    }
-
-    function openCreateConditionGroup() {
-      editingConditionGroup.value = null;
-      activePanel.value = 'condition-config';
-    }
+    function openCreateFactorGroup() { createModalType.value = 'factor'; showCreateModal.value = true; }
+    function openCreateConditionGroup() { editingConditionGroup.value = null; activePanel.value = 'condition-config'; }
 
     async function handleCreateGroupSave(payload) {
       try {
         if (createModalType.value === 'factor') {
-          const result = await api.upsertEarnFactorGroup({
-            name: payload.name,
-            stackable: payload.stackable,
-            window_start: payload.window_start,
-            window_end: payload.window_end,
-            factors: [],
-          });
-          emit('trigger-event', {
-            name: 'earn-factor-group-saved',
-            event: { groupId: result?.group_id, groupName: payload.name, action: 'created' },
-          });
+          const result = await api.upsertEarnFactorGroup({ name: payload.name, stackable: payload.stackable, window_start: payload.window_start, window_end: payload.window_end, factors: [] });
+          emit('trigger-event', { name: 'earn-factor-group-saved', event: { groupId: result?.group_id, groupName: payload.name, action: 'created' } });
           await loadFactorGroups();
         }
-      } catch (e) {
-        emitError('Failed to create group', e);
-      }
+      } catch (e) { emitError('Failed to create group', e); }
       showCreateModal.value = false;
+      nextTick(() => requestAnimationFrame(rebuildLines));
     }
 
-    // Factor Save
     async function saveFactorConfig({ groupId, factor }) {
       try {
         const groupDetails = await api.fetchEarnFactorGroupDetails(groupId);
-        const existingFactors = groupDetails?.factors || [];
-        let updatedFactors;
-        if (factor.id) {
-          updatedFactors = existingFactors.map(f => f.id === factor.id ? factor : f);
-        } else {
-          updatedFactors = [...existingFactors, factor];
-        }
-        await api.upsertEarnFactorGroup({
-          id: groupId,
-          factors: updatedFactors,
-        });
-        emit('trigger-event', {
-          name: 'earn-factor-saved',
-          event: { factorId: factor.id, factorType: factor.earn_factor_type, groupId },
-        });
+        const existing = groupDetails?.factors || [];
+        const updated = factor.id ? existing.map(f => f.id === factor.id ? factor : f) : [...existing, factor];
+        await api.upsertEarnFactorGroup({ id: groupId, factors: updated });
+        emit('trigger-event', { name: 'earn-factor-saved', event: { factorId: factor.id, factorType: factor.earn_factor_type, groupId } });
         await loadFactorGroups();
         closePanel();
-        nextTick(updateConnectionLines);
-      } catch (e) {
-        emitError('Failed to save earn factor', e);
-      }
+      } catch (e) { emitError('Failed to save earn factor', e); }
+      nextTick(() => requestAnimationFrame(rebuildLines));
     }
 
-    // Condition Group Save
     async function saveConditionGroupConfig(payload) {
       try {
         const result = await api.upsertConditionGroup(payload);
-        emit('trigger-event', {
-          name: 'earn-condition-group-saved',
-          event: {
-            groupId: result?.group?.id || payload.id,
-            groupName: payload.name,
-            action: payload.id ? 'updated' : 'created',
-          },
-        });
+        emit('trigger-event', { name: 'earn-condition-group-saved', event: { groupId: result?.group?.id || payload.id, groupName: payload.name, action: payload.id ? 'updated' : 'created' } });
         await loadConditionGroups();
         closePanel();
-        nextTick(updateConnectionLines);
-      } catch (e) {
-        emitError('Failed to save condition group', e);
-      }
+      } catch (e) { emitError('Failed to save condition group', e); }
+      nextTick(() => requestAnimationFrame(rebuildLines));
     }
 
-    // Connection Handling
-    function handleConnectFactor(factor) {
-      const el = factorElRefs.value[factor?.id];
-      if (el) {
-        const rect = el.getBoundingClientRect();
-        connectPopup.value = {
-          open: true,
-          position: { x: rect.right + 10, y: rect.top },
-          factorId: factor.id,
-          factorGroupId: factor.earn_factor_group_id,
-        };
-      } else {
-        connectPopup.value = {
-          open: true,
-          position: { x: 500, y: 200 },
-          factorId: factor.id,
-          factorGroupId: factor.earn_factor_group_id,
-        };
-      }
+    function handleConnectFactor(factor, event) {
+      const rect = event?.target?.getBoundingClientRect?.();
+      connectPopup.value = {
+        open: true,
+        position: rect ? { x: rect.right + 8, y: rect.top - 4 } : { x: 400, y: 200 },
+        factorId: factor.id,
+        factorGroupId: factor.earn_factor_group_id,
+      };
     }
 
     async function handleConnectSelect(conditionGroup) {
       const { factorId, factorGroupId } = connectPopup.value;
       connectPopup.value.open = false;
-
       try {
         const groupDetails = await api.fetchEarnFactorGroupDetails(factorGroupId);
-        const factors = (groupDetails?.factors || []).map(f => {
-          if (f.id === factorId) {
-            return { ...f, earn_conditions_group_id: conditionGroup.id };
-          }
-          return f;
-        });
+        const factors = (groupDetails?.factors || []).map(f => f.id === factorId ? { ...f, earn_conditions_group_id: conditionGroup.id } : f);
         await api.upsertEarnFactorGroup({ id: factorGroupId, factors });
-        emit('trigger-event', {
-          name: 'connection-changed',
-          event: { factorId, conditionGroupId: conditionGroup.id, action: 'linked' },
-        });
+        emit('trigger-event', { name: 'connection-changed', event: { factorId, conditionGroupId: conditionGroup.id, action: 'linked' } });
         await loadFactorGroups();
-        nextTick(updateConnectionLines);
-      } catch (e) {
-        emitError('Failed to link factor to condition group', e);
-      }
+      } catch (e) { emitError('Failed to link factor', e); }
+      nextTick(() => requestAnimationFrame(rebuildLines));
     }
 
-    // Connection Line Geometry
-    function registerFactorRef({ factorId, el }) {
-      factorElRefs.value[factorId] = el;
-      nextTick(updateConnectionLines);
-    }
-
-    function registerDotRef({ groupId, el }) {
-      if (el) conditionDotRefs.value[groupId] = el;
-    }
-
-    function registerConditionCardRef(displayKey, el) {
-      if (el?.$el) conditionCardRefs.value[displayKey] = el.$el;
-    }
-
-    function updateConnectionLines() {
-      const container = columnsRef.value;
-      if (!container) return;
-      const containerRect = container.getBoundingClientRect();
-      const lines = [];
-
-      const allFactors = Object.values(factorsByGroup.value || {}).flat();
-
-      for (const factor of allFactors) {
-        const cgId = factor?.earn_conditions_group_id;
-        if (!cgId) continue;
-
-        const factorEl = factorElRefs.value[factor.id];
-        const displayKey = `${cgId}_${factor.id}`;
-        const condCard = conditionCardRefs.value[displayKey];
-
-        if (!factorEl) continue;
-
-        const factorRect = factorEl.getBoundingClientRect();
-        const y1 = factorRect.top + factorRect.height / 2 - containerRect.top;
-        const x1 = 0;
-
-        let x2 = connectionAreaWidth.value;
-        let y2 = y1;
-
-        if (condCard) {
-          const condRect = condCard.getBoundingClientRect();
-          y2 = condRect.top + 24 - containerRect.top;
-          x2 = connectionAreaWidth.value;
-        }
-
-        lines.push({
-          key: `${factor.id}_${cgId}`,
-          x1,
-          y1,
-          x2,
-          y2,
-          factorId: factor.id,
-          conditionGroupId: cgId,
-          dashed: false,
-        });
-      }
-
-      connectionLines.value = lines;
-
-      const maxY = Math.max(containerRect.height, ...lines.map(l => Math.max(l.y1, l.y2) + 20));
-      connectionAreaHeight.value = maxY;
-    }
-
-    // Lifecycle
+    // ─── Lifecycle ───
     onMounted(() => {
-      if (props.content?.authToken) {
-        loadAll();
-      }
+      if (props.content?.authToken) loadAll();
+
+      resizeObserver = new ResizeObserver(() => requestAnimationFrame(rebuildLines));
+      if (layoutRef.value) resizeObserver.observe(layoutRef.value);
     });
 
-    watch(() => props.content?.authToken, (newToken) => {
-      if (newToken) loadAll();
-    });
+    onBeforeUnmount(() => { resizeObserver?.disconnect(); });
 
-    // Actions
-    const componentActions = {
-      refreshData: loadAll,
-      closePanel,
-    };
-
-    /* wwEditor:start */
-    // Editor-only code
-    /* wwEditor:end */
+    watch(() => props.content?.authToken, (t) => { if (t) loadAll(); });
 
     return {
-      rootRef,
-      columnsRef,
-      connectionsRef,
-      rootStyles,
-      factorGroups,
-      factorsByGroup,
-      allConditionGroupsList,
-      allEntityOptions,
-      ticketTypes,
-      displayedConditionGroups,
-      loadingFactorGroups,
-      loadingConditionGroups,
-      expandedFactorGroups,
-      expandedConditionGroups,
-      activePanel,
-      editingFactor,
-      editingFactorGroupId,
-      editingConditionGroup,
-      showCreateModal,
-      createModalType,
-      connectionLines,
-      connectionAreaWidth,
-      connectionAreaHeight,
-      hoveredConnectionKey,
-      connectPopup,
+      rootRef, layoutRef, svgRef, leftScrollRef, rightScrollRef,
       content: computed(() => props.content),
-      toggleFactorGroupExpand,
-      toggleConditionGroupExpand,
-      closePanel,
-      handleAddFactor,
-      handleEditFactor,
-      handleEditFactorGroup,
-      handleAddCondition,
-      handleEditConditionGroup,
-      openCreateFactorGroup,
-      openCreateConditionGroup,
-      handleCreateGroupSave,
-      saveFactorConfig,
-      saveConditionGroupConfig,
-      handleConnectFactor,
-      handleConnectSelect,
-      registerFactorRef,
-      registerDotRef,
-      registerConditionCardRef,
-      ...componentActions,
+      factorGroups, factorsByGroup, allConditionGroupsList, allEntityOptions, ticketTypes,
+      loadingFactorGroups, loadingConditionGroups,
+      rightColumnEntries, connectionLines, svgWidth, svgHeight, hoveredLineKey,
+      activePanel, editingFactor, editingFactorGroupId, editingConditionGroup,
+      showCreateModal, createModalType, selectedFactorId, activeConditionKey, connectPopup,
+      registerFactorRef, registerConditionPillRef,
+      handleAddFactor, handleEditFactor, handleEditFactorGroup, handleSelectFactor,
+      handleAddCondition, handleEditConditionGroup, handleConnectFactor, handleConnectSelect,
+      openCreateFactorGroup, openCreateConditionGroup, handleCreateGroupSave,
+      saveFactorConfig, saveConditionGroupConfig, toggleConditionDetail, closePanel,
+      refreshData: loadAll,
     };
   },
 };
@@ -639,10 +461,6 @@ export default {
 
 <style scoped lang="scss">
 @import 'polaris-weweb-styles';
-
-:root {
-  @include polaris-tokens;
-}
 
 .earn-studio {
   @include polaris-tokens;
@@ -652,69 +470,58 @@ export default {
   width: 100%;
   height: 100%;
   overflow: auto;
-  padding: var(--p-space-400);
+  padding: var(--p-space-500);
 
-  &__columns {
+  &__layout {
     display: flex;
     align-items: flex-start;
-    gap: 0;
-    min-height: 400px;
     position: relative;
+    min-height: 300px;
   }
 
-  &__column {
+  &__col {
     flex-shrink: 0;
-
-    &--left {
-      z-index: 2;
-    }
-
-    &--right {
-      z-index: 2;
-    }
+    z-index: 2;
   }
 
-  &__column-header {
+  &__col-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: var(--p-space-400);
+    margin-bottom: var(--p-space-300);
+    padding: 0 var(--p-space-100);
   }
 
-  &__column-title {
-    @include polaris-text-heading-md;
+  &__col-title {
+    @include polaris-text-heading-sm;
     margin: 0;
   }
 
   &__create-btn {
     @include polaris-button-primary;
     @include polaris-button-slim;
+    font-size: var(--p-font-size-300);
   }
 
-  &__column-body {
-    @include polaris-block-stack(var(--p-space-300));
-  }
-
-  &__card {
-    /* Spacing handled by block-stack */
-  }
-
-  &__connections {
-    flex: 1;
-    min-width: 80px;
-    max-width: 160px;
-    position: relative;
-    z-index: 1;
+  &__col-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
   }
 
   &__svg {
-    width: 100%;
+    flex-shrink: 0;
     overflow: visible;
+    z-index: 1;
+    min-width: 60px;
+    max-width: 180px;
+    flex: 1;
   }
 
-  &__connection-line {
+  &__line {
     cursor: pointer;
-    transition: stroke var(--p-motion-duration-150) var(--p-motion-ease);
+    transition: stroke var(--p-motion-duration-100) var(--p-motion-ease),
+                stroke-width var(--p-motion-duration-100) var(--p-motion-ease);
   }
 
   &__loading {
@@ -731,21 +538,17 @@ export default {
   &__empty {
     @include polaris-text-body-subdued;
     text-align: center;
-    padding: var(--p-space-800);
-    background: var(--p-color-bg-surface);
-    border-radius: var(--p-border-radius-300);
+    padding: var(--p-space-600) var(--p-space-400);
     border: 2px dashed var(--p-color-border);
+    border-radius: var(--p-border-radius-200);
+    font-size: var(--p-font-size-300);
   }
 }
 
-// Slide transition for panels
-.slide-right-enter-active,
-.slide-right-leave-active {
+.slide-right-enter-active, .slide-right-leave-active {
   transition: transform var(--p-motion-duration-300) var(--p-motion-ease);
 }
-
-.slide-right-enter-from,
-.slide-right-leave-to {
+.slide-right-enter-from, .slide-right-leave-to {
   transform: translateX(100%);
 }
 </style>
