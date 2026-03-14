@@ -15,19 +15,29 @@
             <option value="rate">Base rate</option>
             <option value="multiplier">Multiplier</option>
           </select>
+          <div class="es__create-dropdown">
+            <button class="es__primary-btn">
+              Create
+              <svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="es__create-menu">
+              <button class="es__create-menu-item" @click="openCreateFactorGroup">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Earn Factor Group
+              </button>
+              <button class="es__create-menu-item" @click="openCreateConditionGroup">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Earn Condition Group
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
     <div class="es__layout" ref="layoutRef">
       <div class="es__header-row">
-        <div class="es__col-head es__col-head--left">
-          <h2 class="es__title">Earn factor group</h2>
-          <button class="es__primary-btn" @click="openCreateFactorGroup">Create</button>
-        </div>
-        <div class="es__col-head es__col-head--right">
-          <h2 class="es__title">Earn Conditions group</h2>
-          <button class="es__primary-btn" @click="openCreateConditionGroup">Create</button>
-        </div>
+        <div class="es__col-label es__col-label--left">Earn factor group</div>
+        <div class="es__col-label es__col-label--right">Earn conditions group</div>
       </div>
 
       <div v-if="loadingFactorGroups" class="es__loading"><div class="es__spinner"></div></div>
@@ -562,15 +572,36 @@ $right-width: 480px;
   }
 
   &__layout { display: flex; flex-direction: column; position: relative; }
-  &__header-row { display: flex; justify-content: space-between; }
-  &__col-head {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: var(--p-space-500) 0 var(--p-space-300);
+  &__header-row { display: flex; justify-content: space-between; padding-bottom: var(--p-space-300); }
+  &__col-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.8px;
+    text-transform: uppercase; color: var(--p-color-text-secondary);
     &--left { width: $left-width; flex-shrink: 0; }
     &--right { width: $right-width; flex-shrink: 0; }
   }
-  &__title { @include polaris-text-title; margin: 0; }
-  &__primary-btn { @include polaris-button-primary; @include polaris-button-slim; font-size: var(--p-font-size-300); }
+  &__primary-btn { @include polaris-button-primary; @include polaris-button-slim; font-size: var(--p-font-size-300); gap: 4px; }
+
+  &__create-dropdown {
+    position: relative;
+    &:hover .es__create-menu { display: flex; }
+  }
+  &__create-menu {
+    display: none; position: absolute; top: 100%; right: 0; margin-top: 4px;
+    flex-direction: column; min-width: 200px; padding: 4px 0;
+    background: var(--p-color-bg-surface); border: 1px solid var(--p-color-border);
+    border-radius: var(--p-border-radius-200); box-shadow: var(--p-shadow-popover);
+    z-index: 50;
+  }
+  &__create-menu-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; width: 100%;
+    font-family: var(--p-font-family-sans); font-size: 13px;
+    color: var(--p-color-text); background: none; border: none;
+    cursor: pointer; text-align: left;
+    transition: background 0.1s;
+    &:hover { background: var(--p-color-bg-surface-hover); }
+    svg { color: var(--p-color-icon); flex-shrink: 0; }
+  }
 
   &__group-row {
     display: flex; justify-content: space-between; align-items: flex-start;
@@ -587,9 +618,17 @@ $right-width: 480px;
     width: $sidebar-width; flex-shrink: 0;
     min-height: $card-height;
     display: flex; align-items: stretch;
-    border: 1px solid var(--p-color-border);
+    background: var(--p-color-bg-surface);
+    border: 1px solid var(--p-color-border-info);
     border-radius: var(--p-border-radius-200);
+    box-shadow: var(--p-shadow-card-sm);
     overflow: hidden;
+    transition: box-shadow 0.15s, border-width 0.15s;
+    &:hover {
+      border-width: 1.5px;
+      box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.1);
+      .es__sidebar-action { opacity: 0.7; }
+    }
   }
   &__sidebar-accent { width: 4px; min-width: 4px; }
   &__sidebar-inner {
@@ -609,8 +648,8 @@ $right-width: 480px;
     display: flex; align-items: center; justify-content: center;
     background: none; border: none; border-radius: var(--p-border-radius-100);
     color: var(--p-color-icon); cursor: pointer; flex-shrink: 0;
-    opacity: 0.6; transition: opacity 0.1s, background 0.1s;
-    &:hover { opacity: 1; background: var(--p-color-bg-fill-transparent-hover); }
+    opacity: 0; transition: opacity 0.15s, background 0.1s;
+    &:hover { opacity: 1 !important; background: var(--p-color-bg-fill-transparent-hover); }
   }
 
   &__group-cards {
