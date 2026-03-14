@@ -114,7 +114,7 @@ Connection lines are drawn by querying the DOM directly:
   - Earn factor (from factor config sidebar) — calls `admin_delete_earn_factor`
   - Earn factor group (from group edit modal) — calls `admin_delete_earn_factor_group`
   - Earn condition group (from condition config sidebar) — calls `admin_delete_earn_conditions_group`
-  - Delete buttons styled as subtle red text links (`polaris-link-destructive` mixin), not prominent buttons
+  - Delete buttons labeled simply "Delete" (no entity name suffix), styled as subtle red text links (`polaris-link-destructive` mixin), not prominent buttons
   - Confirmation popups centered on screen (`position: fixed`)
 - **Toast notifications** (Polaris style) for all API actions: create, update, delete, link — black header for success, red for error
 - Operator toggle: Figma-accurate pill-style segmented control using `polaris-segmented-pill` mixins
@@ -158,6 +158,7 @@ earn-studio/
     │   - Config panel overlay: absolute positioning + backdrop
     │   - Delete handlers for factors, factor groups, condition groups
     │   - Create dropdown: mouseenter/mouseleave with bridge pseudo-element
+    │   - Index-based group color map (computed): sequential assignment avoids collisions
     │   - 60px unified card height, 160px sidebar, 560px left, 520px right
     │
     ├── useApi.js                         # Supabase RPC/REST API layer
@@ -170,9 +171,9 @@ earn-studio/
         ├── EarnFactorConfig.vue          # Sidebar: edit/create earn factor
         │   - Fields: name, type (rate/multiplier), amount, target currency
         │     (Points/Tickets/Store Credits), ticket type dropdown (conditional),
-        │     window start/end, public/private, expiry TTL (private only),
-        │     condition group dropdown
-        │   - Delete: red text link → confirmation modal (fixed center)
+        │     window start/end (native date input, webkit picker indicator hidden),
+        │     public/private, expiry TTL (private only), condition group dropdown
+        │   - Delete: "Delete" red text link → confirmation modal (fixed center)
         │   - Uses polaris-modal-header/footer, polaris-label, polaris-radio-wrapper
         │   - Save: emits { groupId, factor } → parent upserts
         │   - Delete: emits { factorId, groupId } → parent calls API
@@ -183,13 +184,14 @@ earn-studio/
         │     operator toggle (OR/AND/EACH — product/store entities only),
         │     threshold type (product entities only), excess toggle, min/max
         │   - Entity picker modal with search + checkbox selection
-        │   - Delete: red text link → confirmation modal (fixed center)
+        │   - Delete: "Delete" red text link → confirmation modal (fixed center)
         │   - Uses polaris-modal-header/footer, polaris-link-destructive
         │
         ├── CreateGroupModal.vue          # Modal: create/edit earn factor group
-        │   - Fields: name, stackable toggle, window start/end
+        │   - Fields: name, stackable toggle, window start/end (native date
+        │     input, webkit picker indicator hidden)
         │   - Supports edit mode (receives group prop) with delete option
-        │   - Delete: red text link → nested confirmation modal
+        │   - Delete: "Delete" red text link → nested confirmation modal
         │
         ├── ConnectPopup.vue              # Popup: link factor → condition group
         │   - Searchable list of all condition groups
@@ -354,13 +356,14 @@ All save/delete actions trigger toast notifications (success = black, error = Po
 - Built on `polaris-weweb-styles` (GitHub: `rangwan-rocket/polaris-weweb-styles`, pinned to commit `1182962`)
 - Uses Polaris design tokens: `--p-color-*`, `--p-space-*`, `--p-font-*`, `--p-border-radius-*`, `--p-shadow-*`
 - Uses Polaris mixins: `polaris-button-primary`, `polaris-button-default`, `polaris-button-critical`, `polaris-button-plain`, `polaris-button-slim`, `polaris-input`, `polaris-select`, `polaris-date-field`, `polaris-radio` (with `box-sizing: border-box` + transform centering), `polaris-radio-wrapper`, `polaris-checkbox`, `polaris-switch`, `polaris-spinner`, `polaris-label`, `polaris-text-heading-sm`, `polaris-text-body`, `polaris-text-body-subdued`, `polaris-text-description`, `polaris-modal-header`, `polaris-modal-footer`, `polaris-modal-backdrop`, `polaris-modal`, `polaris-search-field`, `polaris-chip-removable`, `polaris-segmented-pill`, `polaris-segmented-pill-btn`, `polaris-segmented-pill-btn-active`, `polaris-link-destructive`
-- Group colors: 8-color deterministic palette hashed by group ID
+- Group colors: 8-color palette assigned by index (earn factor groups first, then condition groups) via computed `groupColorMap` to prevent adjacent groups sharing colors; falls back to hash for unknown IDs
 - Inter font throughout matching Figma specs
 - Factor card icons: tag (rate), lightning bolt (multiplier)
 - Condition group icon: filter/lines (descending horizontal bars)
 - Condition detail table: bordered 8px-radius container, pink item badges with eye icon, NoteIcon for threshold, `#EEEEEE` cell borders
 - Config panels: absolute positioning overlay with 30% opacity backdrop; both panels use consistent `polaris-modal-header`/`polaris-modal-footer` patterns
-- Delete buttons: subtle red text links (`polaris-link-destructive` mixin) — positioned in body, not footer
+- Delete buttons: subtle red text links (`polaris-link-destructive` mixin) labeled "Delete" — positioned in body, not footer
+- Date fields: native `<input type="date">` with `polaris-date-field` mixin; native webkit calendar picker indicator hidden via `::-webkit-calendar-picker-indicator { opacity: 0 }` to prevent duplicate icons (mixin adds custom SVG background-image calendar icon)
 - Card borders: unified blue (`--p-color-border-info`) for all cards including group sidebar; hover thickens to 1.5px with shadow elevation; dim/unlinked cards use grey border, restore blue on hover
 - Group sidebar: unified with card design (white bg, blue border, shadow); action icons hidden by default, appear on hover
 - Create dropdown: single consolidated button with mouseenter/mouseleave menu + invisible bridge pseudo-element
