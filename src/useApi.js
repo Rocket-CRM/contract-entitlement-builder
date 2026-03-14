@@ -117,6 +117,10 @@ export function useApi(props) {
     return rpc('get_all_entity_options');
   }
 
+  async function fetchTicketTypes() {
+    return restGet('ticket_type', 'select=id,name,ticket_code,is_credit,credit_platform,active_status&order=name.asc');
+  }
+
   return {
     loading,
     error,
@@ -135,5 +139,6 @@ export function useApi(props) {
     deleteConditionGroup,
     deleteCondition,
     fetchEntityOptions,
+    fetchTicketTypes,
   };
 }

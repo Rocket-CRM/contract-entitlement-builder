@@ -36,32 +36,55 @@
             </div>
           </div>
         </template>
+
+        <div v-if="isEdit" class="modal__delete-section">
+          <button class="modal__btn-danger" @click="showDeleteConfirm = true">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M6 6h8v10H6V6zM4 6h12M8 4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Delete earn factor group
+          </button>
+        </div>
       </div>
 
       <div class="modal__footer">
         <button class="modal__btn-secondary" @click="$emit('close')">Cancel</button>
         <button class="modal__btn-primary" @click="handleSave" :disabled="saving || !form.name?.trim()">
-          {{ saving ? 'Creating...' : 'Create' }}
+          {{ saving ? (isEdit ? 'Saving...' : 'Creating...') : (isEdit ? 'Save' : 'Create') }}
         </button>
+      </div>
+    </div>
+
+    <div v-if="showDeleteConfirm" class="modal__confirm-overlay" @click.self="showDeleteConfirm = false">
+      <div class="modal__confirm-modal">
+        <h4 class="modal__confirm-title">Delete earn factor group?</h4>
+        <p class="modal__confirm-desc">This will delete the group and all its factors. This action cannot be undone.</p>
+        <div class="modal__confirm-actions">
+          <button class="modal__btn-secondary" @click="showDeleteConfirm = false">Cancel</button>
+          <button class="modal__btn-danger" @click="handleDelete" :disabled="deleting">{{ deleting ? 'Deleting...' : 'Delete' }}</button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 
 export default {
   props: {
     type: { type: String, default: 'factor' },
+    group: { type: Object, default: null },
   },
-  emits: ['close', 'save'],
+  emits: ['close', 'save', 'delete'],
   setup(props, { emit }) {
     const saving = ref(false);
+    const deleting = ref(false);
+    const showDeleteConfirm = ref(false);
+    const isEdit = computed(() => !!props.group?.id);
 
-    const title = computed(() =>
-      props.type === 'factor' ? 'Create Earn Factor Group' : 'Create Earn Condition Group'
-    );
+    const title = computed(() => {
+      if (isEdit.value) return 'Edit Earn Factor Group';
+      return props.type === 'factor' ? 'Create Earn Factor Group' : 'Create Earn Condition Group';
+    });
 
     const namePlaceholder = computed(() =>
       props.type === 'factor' ? 'e.g. Standard Earning Rule' : 'e.g. Tier Perks'
@@ -74,11 +97,28 @@ export default {
       window_end: '',
     });
 
+    function toDateStr(val) { if (!val) return ''; try { return new Date(val).toISOString().split('T')[0]; } catch { return ''; } }
+
+    watch(() => props.group, (g) => {
+      if (g?.id) {
+        form.value = {
+          name: g.name || '',
+          stackable: g.stackable !== false,
+          window_start: toDateStr(g.window_start),
+          window_end: toDateStr(g.window_end),
+        };
+      } else {
+        form.value = { name: '', stackable: true, window_start: '', window_end: '' };
+      }
+      showDeleteConfirm.value = false;
+    }, { immediate: true });
+
     async function handleSave() {
       if (!form.value.name?.trim()) return;
       saving.value = true;
       try {
         const payload = { name: form.value.name.trim() };
+        if (isEdit.value) payload.id = props.group.id;
         if (props.type === 'factor') {
           payload.stackable = form.value.stackable;
           payload.window_start = form.value.window_start || null;
@@ -92,7 +132,17 @@ export default {
       }
     }
 
-    return { form, title, namePlaceholder, saving, handleSave };
+    async function handleDelete() {
+      deleting.value = true;
+      try {
+        emit('delete', { groupId: props.group?.id });
+      } finally {
+        deleting.value = false;
+        showDeleteConfirm.value = false;
+      }
+    }
+
+    return { form, title, namePlaceholder, saving, deleting, isEdit, showDeleteConfirm, handleSave, handleDelete };
   },
 };
 </script>
@@ -132,5 +182,52 @@ export default {
   &__footer { @include polaris-modal-footer; }
   &__btn-primary { @include polaris-button-primary; }
   &__btn-secondary { @include polaris-button-default; }
+  &__btn-danger {
+    @include polaris-button-critical;
+    font-size: var(--p-font-size-350);
+    gap: 6px;
+  }
+
+  &__delete-section {
+    margin-top: var(--p-space-200);
+    padding-top: var(--p-space-400);
+    border-top: 1px solid var(--p-color-border);
+  }
+
+  &__confirm-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__confirm-modal {
+    background: var(--p-color-bg-surface);
+    border-radius: var(--p-border-radius-300);
+    box-shadow: var(--p-shadow-popover);
+    padding: var(--p-space-500);
+    max-width: 340px;
+    width: 90%;
+  }
+
+  &__confirm-title {
+    @include polaris-text-heading-sm;
+    margin: 0 0 var(--p-space-200);
+  }
+
+  &__confirm-desc {
+    @include polaris-text-body;
+    color: var(--p-color-text-secondary);
+    margin: 0 0 var(--p-space-400);
+  }
+
+  &__confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--p-space-200);
+  }
 }
 </style>

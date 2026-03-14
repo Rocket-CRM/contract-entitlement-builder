@@ -1,5 +1,20 @@
 <template>
   <div class="es" ref="rootRef">
+    <!-- ═══ TOAST NOTIFICATIONS ═══ -->
+    <div class="es__toasts">
+      <div v-for="toast in toasts" :key="toast.id" class="es__toast" :class="'es__toast--' + toast.type">
+        <div class="es__toast-header">
+          <svg v-if="toast.type === 'success'" width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fill="currentColor"/></svg>
+          <svg v-else width="16" height="16" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M10 6v5M10 13.5h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="es__toast-title">{{ toast.title }}</span>
+          <button class="es__toast-close" @click="removeToast(toast.id)">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div v-if="toast.message" class="es__toast-body">{{ toast.message }}</div>
+      </div>
+    </div>
+
     <div class="es__scroll-area">
     <div class="es__page-header">
       <div class="es__page-header-left">
@@ -15,17 +30,17 @@
             <option value="rate">Base rate</option>
             <option value="multiplier">Multiplier</option>
           </select>
-          <div class="es__create-dropdown">
-            <button class="es__primary-btn">
+          <div class="es__create-dropdown" @mouseenter="createMenuOpen = true" @mouseleave="createMenuOpen = false">
+            <button class="es__primary-btn" @click="createMenuOpen = !createMenuOpen">
               Create
               <svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
-            <div class="es__create-menu">
-              <button class="es__create-menu-item" @click="openCreateFactorGroup">
+            <div class="es__create-menu" v-show="createMenuOpen">
+              <button class="es__create-menu-item" @click="openCreateFactorGroup(); createMenuOpen = false">
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 Earn Factor Group
               </button>
-              <button class="es__create-menu-item" @click="openCreateConditionGroup">
+              <button class="es__create-menu-item" @click="openCreateConditionGroup(); createMenuOpen = false">
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 Earn Condition Group
               </button>
@@ -53,7 +68,7 @@
                 <button class="es__sidebar-action" @click="handleAddFactor(entry.group.id)" title="Add earn factor">
                   <svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
                 </button>
-                <button class="es__sidebar-action" @click="handleEditFactorGroup()" title="Edit group">
+                <button class="es__sidebar-action" @click="handleEditFactorGroup(entry.group)" title="Edit group">
                   <svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" fill="currentColor"/></svg>
                 </button>
               </div>
@@ -99,7 +114,7 @@
                           <span>{{ f._condGroupInfo.conditions?.length || 0 }} condition{{ (f._condGroupInfo.conditions?.length || 0) !== 1 ? 's' : '' }}</span>
                           <template v-if="f._condGroupInfo.linkedCount > 0">
                             <span class="es__linked-badge">
-                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.25 8.75L8.75 5.25" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M6.125 10.5L4.958 11.667a2.187 2.187 0 01-3.092-3.092L3.034 7.408a2.187 2.187 0 013.091 0" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M7.875 3.5l1.167-1.167a2.187 2.187 0 013.092 3.092L10.966 6.592a2.187 2.187 0 01-3.091 0" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9.5 4.5V3.5a2 2 0 00-2-2h-1a2 2 0 00-2 2v1M4.5 9.5v1a2 2 0 002 2h1a2 2 0 002-2v-1M7 4.5v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                               {{ f._condGroupInfo.linkedCount }}
                             </span>
                           </template>
@@ -136,11 +151,11 @@
                               <td>{{ cond?.operator || '-' }}</td>
                               <td>
                                 <span class="es__threshold-cell">
-                                  <span>{{ formatThreshold(cond?.threshold_unit) }}</span>
-                                  <svg v-if="cond?.threshold_unit" width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="3" y="1.5" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1" fill="none"/><path d="M6 5.5h4M6 8h3" stroke="currentColor" stroke-width="0.9" stroke-linecap="round"/></svg>
+                                  <span>{{ isProductEntityType(cond?.entity) ? formatThreshold(cond?.threshold_unit) : '—' }}</span>
+                                  <svg v-if="isProductEntityType(cond?.entity) && cond?.threshold_unit" width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="3" y="1.5" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1" fill="none"/><path d="M6 5.5h4M6 8h3" stroke="currentColor" stroke-width="0.9" stroke-linecap="round"/></svg>
                                 </span>
                               </td>
-                              <td>{{ cond?.apply_to_excess_only ? 'Yes' : 'No' }}</td>
+                              <td>{{ isProductEntityType(cond?.entity) && cond?.threshold_unit ? (cond?.apply_to_excess_only ? 'Yes' : 'No') : '—' }}</td>
                             </tr>
                           </tbody>
                         </table>
@@ -166,7 +181,7 @@
                     <button class="es__sidebar-action" @click="handleAddFactor(entry.group.id)" title="Add earn factor">
                       <svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
                     </button>
-                    <button class="es__sidebar-action" @click="handleEditFactorGroup()" title="Edit group">
+                    <button class="es__sidebar-action" @click="handleEditFactorGroup(entry.group)" title="Edit group">
                       <svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" fill="currentColor"/></svg>
                     </button>
                   </div>
@@ -204,7 +219,7 @@
                     <button class="es__sidebar-action" @click="handleAddFactor(entry.group.id)" title="Add earn factor">
                       <svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
                     </button>
-                    <button class="es__sidebar-action" @click="handleEditFactorGroup()" title="Edit group">
+                    <button class="es__sidebar-action" @click="handleEditFactorGroup(entry.group)" title="Edit group">
                       <svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" fill="currentColor"/></svg>
                     </button>
                   </div>
@@ -259,11 +274,11 @@
                               <td>{{ cond?.operator || '-' }}</td>
                               <td>
                                 <span class="es__threshold-cell">
-                                  <span>{{ formatThreshold(cond?.threshold_unit) }}</span>
-                                  <svg v-if="cond?.threshold_unit" width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="3" y="1.5" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1" fill="none"/><path d="M6 5.5h4M6 8h3" stroke="currentColor" stroke-width="0.9" stroke-linecap="round"/></svg>
+                                  <span>{{ isProductEntityType(cond?.entity) ? formatThreshold(cond?.threshold_unit) : '—' }}</span>
+                                  <svg v-if="isProductEntityType(cond?.entity) && cond?.threshold_unit" width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="3" y="1.5" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1" fill="none"/><path d="M6 5.5h4M6 8h3" stroke="currentColor" stroke-width="0.9" stroke-linecap="round"/></svg>
                                 </span>
                               </td>
-                              <td>{{ cond?.apply_to_excess_only ? 'Yes' : 'No' }}</td>
+                              <td>{{ isProductEntityType(cond?.entity) && cond?.threshold_unit ? (cond?.apply_to_excess_only ? 'Yes' : 'No') : '—' }}</td>
                             </tr>
                           </tbody>
                         </table>
@@ -286,7 +301,8 @@
           @mouseenter="hoveredLine = ln.key" @mouseleave="hoveredLine = null" style="cursor:pointer" />
       </svg>
     </div>
-    <CreateGroupModal v-if="showModal" :type="modalType" @close="showModal = false" @save="handleModalSave" />
+    <CreateGroupModal v-if="showModal" :type="modalType" :group="editingFactorGroupData"
+      @close="showModal = false" @save="handleModalSave" @delete="handleDeleteFactorGroup" />
     <ConnectPopup v-if="connectPopup.open" :condition-groups="allCondGroups" :position="connectPopup.pos"
       @close="connectPopup.open = false" @select="handleConnectSelect" />
     </div>
@@ -294,10 +310,10 @@
     <div v-if="panel" class="es__panel-backdrop" @click="panel = null"></div>
     <EarnFactorConfig v-if="panel === 'factor'" class="es__config-panel" :factor="editingFactor" :group-id="editingGroupId"
       :condition-groups="allCondGroups" :ticket-types="ticketTypes" :panel-width="content?.configPanelWidth || '400px'"
-      @close="panel = null" @save="saveFactorConfig" />
+      @close="panel = null" @save="saveFactorConfig" @delete="handleDeleteFactor" />
     <EarnConditionGroupConfig v-if="panel === 'condition'" class="es__config-panel" :group="editingCondGroup"
       :all-entity-options="entityOptions" :panel-width="content?.configPanelWidth || '400px'"
-      @close="panel = null" @save="saveCondGroupConfig" />
+      @close="panel = null" @save="saveCondGroupConfig" @delete="handleDeleteCondGroup" />
   </div>
 </template>
 
@@ -311,9 +327,12 @@ import ConnectPopup from './components/ConnectPopup.vue';
 
 const GROUP_COLORS = ['#2C6ECB', '#D82C0D', '#8A6116', '#29845A', '#6D28D9', '#0D9488', '#C05717', '#4F46E5'];
 const ENTITY_LABELS = { product_product: 'Product', product_sku: 'SKU', product_brand: 'Brand', product_category: 'Category', store: 'Store', store_attribute_set: 'Store Attr', tier: 'Tier', persona: 'Persona' };
-const THRESHOLD_LABELS = { purchase_amount: 'Purchase amount', purchase_quantity: 'Purchase qty', purchase_count: 'Purchase count' };
+const THRESHOLD_LABELS = { purchase_amount: 'Purchase amount', purchase_quantity: 'Purchase qty', purchase_count: 'Purchase count', amount: 'Amount', quantity_primary: 'Qty (primary)', quantity_secondary: 'Qty (secondary)' };
+const PRODUCT_ENTITIES = new Set(['product_product', 'product_sku', 'product_brand', 'product_category']);
 
 function hashStr(s) { let h = 0; for (let i = 0; i < (s||'').length; i++) { h = ((h<<5)-h)+s.charCodeAt(i); h |= 0; } return Math.abs(h); }
+
+let toastId = 0;
 
 export default {
   components: { EarnFactorConfig, EarnConditionGroupConfig, CreateGroupModal, ConnectPopup },
@@ -341,6 +360,7 @@ export default {
     const editingFactor = ref(null);
     const editingGroupId = ref(null);
     const editingCondGroup = ref(null);
+    const editingFactorGroupData = ref(null);
     const showModal = ref(false);
     const modalType = ref('factor');
     const hoveredLine = ref(null);
@@ -350,7 +370,18 @@ export default {
     const searchFactorGroup = ref('');
     const searchCondGroup = ref('');
     const filterFactorType = ref('');
+    const createMenuOpen = ref(false);
+    const toasts = ref([]);
     let lineTimer = null, ro = null;
+
+    function addToast(type, title, message) {
+      const id = ++toastId;
+      toasts.value.push({ id, type, title, message });
+      setTimeout(() => removeToast(id), 5000);
+    }
+    function removeToast(id) {
+      toasts.value = toasts.value.filter(t => t.id !== id);
+    }
 
     const groupNameMap = computed(() => {
       const m = {};
@@ -364,6 +395,7 @@ export default {
     function sidebarStyle(gid) { const c = getGroupColor(gid); return { background: `${c}06` }; }
     function formatEntity(e) { return ENTITY_LABELS[e] || e?.replace(/_/g, ' ')?.replace(/\b\w/g, c => c.toUpperCase()) || '-'; }
     function formatThreshold(u) { return THRESHOLD_LABELS[u] || u?.replace(/_/g, ' ')?.replace(/\b\w/g, c => c.toUpperCase()) || '-'; }
+    function isProductEntityType(entity) { return PRODUCT_ENTITIES.has(entity); }
 
     function toggleCondExpand(dk) {
       expandedConds.value = { ...expandedConds.value, [dk]: !expandedConds.value[dk] };
@@ -420,7 +452,7 @@ export default {
     });
 
     async function loadAll() {
-      await Promise.all([loadFactorGroups(), loadCondGroups(), loadEntities()]);
+      await Promise.all([loadFactorGroups(), loadCondGroups(), loadEntities(), loadTicketTypes()]);
       emit('trigger-event', { name: 'data-loaded', event: { factorGroupCount: factorGroups.value?.length, conditionGroupCount: allCondGroups.value?.length } });
       scheduleLineUpdate(); setTimeout(scheduleLineUpdate, 300); setTimeout(scheduleLineUpdate, 800);
     }
@@ -431,15 +463,16 @@ export default {
         const m = {};
         for (const g of factorGroups.value) { if (!g?.id) continue; const factors = await api.fetchFactorsByGroup(g.id) || []; m[g.id] = factors.map(f => ({ ...f, earn_factor_group_id: f.earn_factor_group_id || g.id })); }
         factorsByGroup.value = m;
-      } catch (e) { err('Load failed', e); } finally { loadingFactorGroups.value = false; }
+      } catch (e) { errMsg('Load failed', e); } finally { loadingFactorGroups.value = false; }
     }
     async function loadCondGroups() {
       loadingConditionGroups.value = true;
       try { allCondGroups.value = await api.fetchAllConditionGroups() || []; const c = {}; for (const g of allCondGroups.value) { if (g?.id) try { c[g.id] = await api.fetchConditionGroupDetails(g.id); } catch {} } condCache.value = c; }
-      catch (e) { err('Load failed', e); } finally { loadingConditionGroups.value = false; }
+      catch (e) { errMsg('Load failed', e); } finally { loadingConditionGroups.value = false; }
     }
-    async function loadEntities() { try { entityOptions.value = await api.fetchEntityOptions() || []; } catch (e) { err('Load failed', e); } }
-    function err(m, e) { console.error(m, e); emit('trigger-event', { name: 'error', event: { message: m, code: 'ERR' } }); }
+    async function loadEntities() { try { entityOptions.value = await api.fetchEntityOptions() || []; } catch (e) { errMsg('Load failed', e); } }
+    async function loadTicketTypes() { try { ticketTypes.value = await api.fetchTicketTypes() || []; } catch (e) { console.warn('Ticket types load failed', e); } }
+    function errMsg(m, e) { console.error(m, e); emit('trigger-event', { name: 'error', event: { message: m, code: 'ERR' } }); }
 
     function scheduleLineUpdate() { clearTimeout(lineTimer); lineTimer = setTimeout(() => nextTick(rebuildLines), 150); }
 
@@ -471,15 +504,120 @@ export default {
 
     function handleAddFactor(groupId) { editingFactor.value = { earn_factor_type: 'rate', public: true, target_currency: 'points', active_status: true }; editingGroupId.value = groupId; panel.value = 'factor'; }
     function handleEditFactor(f) { editingFactor.value = { ...f }; editingGroupId.value = f?.earn_factor_group_id; panel.value = 'factor'; }
-    function handleEditFactorGroup() { modalType.value = 'factor'; showModal.value = true; }
+    function handleEditFactorGroup(g) { editingFactorGroupData.value = g || null; modalType.value = 'factor'; showModal.value = true; }
     async function handleEditConditionGroup(g) { try { editingCondGroup.value = g?.id ? await api.fetchConditionGroupDetails(g.id) : { id: null, name: '', conditions: [] }; } catch { editingCondGroup.value = { ...g, conditions: g?.conditions || [] }; } panel.value = 'condition'; }
-    function openCreateFactorGroup() { modalType.value = 'factor'; showModal.value = true; }
+    function openCreateFactorGroup() { editingFactorGroupData.value = null; modalType.value = 'factor'; showModal.value = true; }
     function openCreateConditionGroup() { editingCondGroup.value = null; panel.value = 'condition'; }
-    async function handleModalSave(p) { try { if (modalType.value === 'factor') { await api.upsertEarnFactorGroup({ name: p.name, stackable: p.stackable, window_start: p.window_start, window_end: p.window_end, factors: [] }); await loadFactorGroups(); } } catch (e) { err('Create failed', e); } showModal.value = false; scheduleLineUpdate(); }
-    async function saveFactorConfig({ groupId, factor }) { try { const det = await api.fetchEarnFactorGroupDetails(groupId); const ex = det?.factors || []; const up = factor.id ? ex.map(f => f.id === factor.id ? factor : f) : [...ex, factor]; await api.upsertEarnFactorGroup({ id: groupId, factors: up }); await loadFactorGroups(); panel.value = null; } catch (e) { err('Save failed', e); } scheduleLineUpdate(); }
-    async function saveCondGroupConfig(payload) { try { await api.upsertConditionGroup(payload); await loadCondGroups(); panel.value = null; } catch (e) { err('Save failed', e); } scheduleLineUpdate(); }
+
+    async function handleModalSave(p) {
+      try {
+        if (modalType.value === 'factor') {
+          const payload = { name: p.name, stackable: p.stackable, window_start: p.window_start, window_end: p.window_end };
+          if (p.id) payload.id = p.id;
+          if (!p.id) payload.factors = [];
+          await api.upsertEarnFactorGroup(payload);
+          await loadFactorGroups();
+          const action = p.id ? 'updated' : 'created';
+          addToast('success', `Earn Factor Group ${action === 'created' ? 'Created' : 'Updated'}`, `Earn factor group "${p.name}" ${action} successfully`);
+          emit('trigger-event', { name: 'earn-factor-group-saved', event: { groupId: p.id, groupName: p.name, action } });
+        }
+      } catch (e) {
+        errMsg('Save failed', e);
+        addToast('error', 'Save Failed', e?.message || 'Failed to save earn factor group');
+      }
+      showModal.value = false;
+      scheduleLineUpdate();
+    }
+
+    async function saveFactorConfig({ groupId, factor }) {
+      try {
+        const det = await api.fetchEarnFactorGroupDetails(groupId);
+        const ex = det?.factors || [];
+        const up = factor.id ? ex.map(f => f.id === factor.id ? factor : f) : [...ex, factor];
+        await api.upsertEarnFactorGroup({ id: groupId, factors: up });
+        await loadFactorGroups();
+        panel.value = null;
+        const action = factor.id ? 'updated' : 'created';
+        addToast('success', `Earn Factor ${action === 'created' ? 'Created' : 'Updated'}`, `Earn factor "${factor.name || 'Unnamed'}" ${action} successfully`);
+        emit('trigger-event', { name: 'earn-factor-saved', event: { factorId: factor.id, factorType: factor.earn_factor_type, groupId } });
+      } catch (e) {
+        errMsg('Save failed', e);
+        addToast('error', 'Save Failed', e?.message || 'Failed to save earn factor');
+      }
+      scheduleLineUpdate();
+    }
+
+    async function saveCondGroupConfig(payload) {
+      try {
+        await api.upsertConditionGroup(payload);
+        await loadCondGroups();
+        panel.value = null;
+        const action = payload.id ? 'updated' : 'created';
+        addToast('success', `Earn Condition Group ${action === 'created' ? 'Created' : 'Updated'}`, `Earn condition group "${payload.name || 'Unnamed'}" ${action} successfully`);
+        emit('trigger-event', { name: 'earn-condition-group-saved', event: { groupId: payload.id, groupName: payload.name, action } });
+      } catch (e) {
+        errMsg('Save failed', e);
+        addToast('error', 'Save Failed', e?.message || 'Failed to save earn condition group');
+      }
+      scheduleLineUpdate();
+    }
+
+    async function handleDeleteFactor({ factorId, groupId }) {
+      try {
+        await api.deleteEarnFactor(factorId);
+        await loadFactorGroups();
+        panel.value = null;
+        addToast('success', 'Earn Factor Deleted', 'Earn factor deleted successfully');
+      } catch (e) {
+        errMsg('Delete failed', e);
+        addToast('error', 'Delete Failed', e?.message || 'Failed to delete earn factor');
+      }
+      scheduleLineUpdate();
+    }
+
+    async function handleDeleteFactorGroup({ groupId }) {
+      try {
+        await api.deleteEarnFactorGroup(groupId);
+        await loadFactorGroups();
+        showModal.value = false;
+        addToast('success', 'Earn Factor Group Deleted', 'Earn factor group deleted successfully');
+      } catch (e) {
+        errMsg('Delete failed', e);
+        addToast('error', 'Delete Failed', e?.message || 'Failed to delete earn factor group');
+      }
+      scheduleLineUpdate();
+    }
+
+    async function handleDeleteCondGroup({ groupId }) {
+      try {
+        await api.deleteConditionGroup(groupId);
+        await loadCondGroups();
+        panel.value = null;
+        addToast('success', 'Condition Group Deleted', 'Earn condition group deleted successfully');
+      } catch (e) {
+        errMsg('Delete failed', e);
+        addToast('error', 'Delete Failed', e?.message || 'Failed to delete earn condition group');
+      }
+      scheduleLineUpdate();
+    }
+
     function handleConnectFactor(f, ev) { const r = ev?.target?.closest?.('.es__card-connect')?.getBoundingClientRect?.() || ev?.target?.getBoundingClientRect?.(); connectPopup.value = { open: true, pos: r ? { x: r.right + 8, y: r.top } : { x: 400, y: 200 }, factorId: f.id, groupId: f.earn_factor_group_id }; }
-    async function handleConnectSelect(cg) { const { factorId, groupId } = connectPopup.value; connectPopup.value.open = false; try { const det = await api.fetchEarnFactorGroupDetails(groupId); const fs = (det?.factors || []).map(f => f.id === factorId ? { ...f, earn_conditions_group_id: cg.id } : f); await api.upsertEarnFactorGroup({ id: groupId, factors: fs }); await loadFactorGroups(); await loadCondGroups(); } catch (e) { err('Link failed', e); } scheduleLineUpdate(); }
+    async function handleConnectSelect(cg) {
+      const { factorId, groupId } = connectPopup.value;
+      connectPopup.value.open = false;
+      try {
+        const det = await api.fetchEarnFactorGroupDetails(groupId);
+        const fs = (det?.factors || []).map(f => f.id === factorId ? { ...f, earn_conditions_group_id: cg.id } : f);
+        await api.upsertEarnFactorGroup({ id: groupId, factors: fs });
+        await loadFactorGroups(); await loadCondGroups();
+        addToast('success', 'Connection Updated', `Factor linked to "${cg.name || 'condition group'}" successfully`);
+        emit('trigger-event', { name: 'connection-changed', event: { factorId, conditionGroupId: cg.id, action: 'linked' } });
+      } catch (e) {
+        errMsg('Link failed', e);
+        addToast('error', 'Link Failed', e?.message || 'Failed to link factor to condition group');
+      }
+      scheduleLineUpdate();
+    }
 
     onMounted(() => { if (props.content?.authToken) loadAll(); ro = new ResizeObserver(scheduleLineUpdate); nextTick(() => { if (layoutRef.value) ro.observe(layoutRef.value); }); });
     onBeforeUnmount(() => { ro?.disconnect(); clearTimeout(lineTimer); });
@@ -490,17 +628,20 @@ export default {
       factorGroups, allCondGroups, entityOptions, ticketTypes,
       loadingFactorGroups, loadingConditionGroups, expandedConds,
       searchFactorGroup, searchCondGroup, filterFactorType,
-      panel, editingFactor, editingGroupId, editingCondGroup,
+      createMenuOpen, toasts,
+      panel, editingFactor, editingGroupId, editingCondGroup, editingFactorGroupData,
       showModal, modalType, hoveredLine, connectPopup,
       linkedGroupEntries, unlinkedGroupsWithFactors, emptyGroups,
       hasUnlinkedSection, unlinkedCondGroups, lines,
       getGroupColor, getGroupName, cgIconStyle, sidebarStyle,
       getFactorTitle, getFactorType, formatEntity, formatThreshold,
-      toggleCondExpand,
+      isProductEntityType,
+      toggleCondExpand, addToast, removeToast,
       handleAddFactor, handleEditFactor, handleEditFactorGroup,
       handleEditConditionGroup, handleConnectFactor,
       openCreateFactorGroup, openCreateConditionGroup, handleModalSave,
       saveFactorConfig, saveCondGroupConfig, handleConnectSelect,
+      handleDeleteFactor, handleDeleteFactorGroup, handleDeleteCondGroup,
       scheduleLineUpdate, refreshData: loadAll, closePanel: () => { panel.value = null; },
     };
   },
@@ -513,7 +654,7 @@ export default {
 $card-height: 60px;
 $sidebar-width: 160px;
 $left-width: 560px;
-$right-width: 480px;
+$right-width: 520px;
 
 .es {
   @include polaris-tokens;
@@ -523,6 +664,74 @@ $right-width: 480px;
   width: 100%; height: 100%;
   position: relative;
   overflow: hidden;
+
+  // ═══ TOASTS ═══
+  &__toasts {
+    position: absolute;
+    top: var(--p-space-300);
+    right: var(--p-space-400);
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    gap: var(--p-space-200);
+    max-width: 380px;
+    pointer-events: none;
+  }
+  &__toast {
+    pointer-events: auto;
+    border-radius: var(--p-border-radius-200);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+    overflow: hidden;
+    animation: es-toast-in 0.25s ease-out;
+
+    &--success {
+      .es__toast-header {
+        background: #1A1A1A;
+        color: #fff;
+      }
+      .es__toast-body {
+        background: var(--p-color-bg-surface);
+        color: var(--p-color-text);
+      }
+    }
+    &--error {
+      .es__toast-header {
+        background: var(--p-color-bg-fill-critical);
+        color: #fff;
+      }
+      .es__toast-body {
+        background: var(--p-color-bg-surface);
+        color: var(--p-color-text);
+      }
+    }
+  }
+  &__toast-header {
+    display: flex;
+    align-items: center;
+    gap: var(--p-space-200);
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  &__toast-title { flex: 1; }
+  &__toast-close {
+    width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; color: inherit; cursor: pointer;
+    opacity: 0.7; border-radius: 4px;
+    &:hover { opacity: 1; background: rgba(255,255,255,0.15); }
+  }
+  &__toast-body {
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.4;
+    border-top: 1px solid var(--p-color-border);
+  }
+
+  @keyframes es-toast-in {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
 
   &__scroll-area {
     width: 100%; height: 100%;
@@ -585,14 +794,22 @@ $right-width: 480px;
 
   &__create-dropdown {
     position: relative;
-    &:hover .es__create-menu { display: flex; }
   }
   &__create-menu {
-    display: none; position: absolute; top: 100%; right: 0; margin-top: 4px;
+    position: absolute; top: 100%; right: 0; margin-top: 0;
     flex-direction: column; min-width: 200px; padding: 4px 0;
     background: var(--p-color-bg-surface); border: 1px solid var(--p-color-border);
     border-radius: var(--p-border-radius-200); box-shadow: var(--p-shadow-popover);
     z-index: 50;
+    display: flex;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 0; right: 0;
+      height: 6px;
+    }
   }
   &__create-menu-item {
     display: flex; align-items: center; gap: 8px;
@@ -615,7 +832,6 @@ $right-width: 480px;
     display: flex; align-items: stretch; gap: 8px;
   }
 
-  // ─── Group sidebar ───
   &__group-sidebar {
     width: $sidebar-width; flex-shrink: 0;
     min-height: $card-height;
@@ -691,7 +907,7 @@ $right-width: 480px;
     overflow: visible; transition: box-shadow 0.15s, border-color 0.15s, border-width 0.15s;
     &:hover { border-width: 1.5px; box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.1); .es__card-edit { opacity: 1; } .es__card-connect { opacity: 1; } }
     &--factor { }
-    &--condition { padding-left: var(--p-space-400); width: 100%; cursor: pointer; }
+    &--condition { padding-left: var(--p-space-300); width: 100%; cursor: pointer; }
     &--dim { opacity: 0.6; border-color: var(--p-color-border); box-shadow: none; &:hover { opacity: 1; border-color: var(--p-color-border-info); } }
     &--expanded { height: auto; }
   }
@@ -741,10 +957,10 @@ $right-width: 480px;
 
   // ─── Linked badge ───
   &__linked-badge {
-    display: inline-flex; align-items: center; gap: 3px;
-    padding: 1px 7px 1px 5px; border-radius: 10px;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px 2px 5px; border-radius: 12px;
     background: #E3F1FE; color: #2C6ECB;
-    font-size: 11px; font-weight: var(--p-font-weight-semibold);
+    font-size: 12px; font-weight: var(--p-font-weight-semibold);
     svg { flex-shrink: 0; }
   }
 

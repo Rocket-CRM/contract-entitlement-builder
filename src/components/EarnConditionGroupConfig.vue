@@ -55,7 +55,7 @@
             </div>
           </div>
 
-          <div class="config-panel__field">
+          <div class="config-panel__field" v-if="isProductOrStoreEntity(cond.entity)">
             <label class="config-panel__label">Operator</label>
             <div class="operator-toggle">
               <button
@@ -68,7 +68,7 @@
             </div>
           </div>
 
-          <div class="config-panel__field">
+          <div class="config-panel__field" v-if="isProductEntity(cond.entity)">
             <label class="config-panel__label">Threshold type</label>
             <select class="config-panel__select" v-model="cond.threshold_unit">
               <option :value="null">None</option>
@@ -78,7 +78,7 @@
             </select>
           </div>
 
-          <div class="config-panel__field" v-if="cond.threshold_unit">
+          <div class="config-panel__field" v-if="isProductEntity(cond.entity) && cond.threshold_unit">
             <label class="config-panel__label config-panel__label--with-toggle">
               Apply to excess only
               <span class="config-panel__tooltip-icon" title="When enabled, multiplier applies only to quantity/value above minimum threshold">
@@ -93,12 +93,12 @@
             </label>
           </div>
 
-          <div class="config-panel__field-row" v-if="cond.threshold_unit">
+          <div class="config-panel__field-row" v-if="isProductEntity(cond.entity) && cond.threshold_unit">
             <div class="config-panel__field config-panel__field--half">
               <label class="config-panel__label">Minimum required</label>
               <div class="config-panel__input-suffix">
                 <input class="config-panel__input" type="number" v-model.number="cond.min_threshold" placeholder="Min amount" min="0" step="any" />
-                <span class="config-panel__suffix">฿</span>
+                <span class="config-panel__suffix" v-if="cond.threshold_unit === 'amount'">฿</span>
               </div>
             </div>
             <div class="config-panel__field-separator">To</div>
@@ -106,7 +106,7 @@
               <label class="config-panel__label">Maximum cap</label>
               <div class="config-panel__input-suffix">
                 <input class="config-panel__input" type="number" v-model.number="cond.max_threshold" placeholder="Max amount" min="0" step="any" />
-                <span class="config-panel__suffix">฿</span>
+                <span class="config-panel__suffix" v-if="cond.threshold_unit === 'amount'">฿</span>
               </div>
             </div>
           </div>
@@ -120,6 +120,13 @@
         </svg>
         Add another earn condition
       </button>
+
+      <div v-if="!isNew" class="config-panel__delete-section">
+        <button class="config-panel__btn-danger" @click="showDeleteConfirm = true">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M6 6h8v10H6V6zM4 6h12M8 4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Delete condition group
+        </button>
+      </div>
     </div>
 
     <div class="config-panel__footer">
@@ -155,6 +162,17 @@
         </div>
       </div>
     </div>
+
+    <div v-if="showDeleteConfirm" class="config-panel__confirm-overlay" @click.self="showDeleteConfirm = false">
+      <div class="config-panel__confirm-modal">
+        <h4 class="config-panel__confirm-title">Delete condition group?</h4>
+        <p class="config-panel__confirm-desc">This action cannot be undone. Are you sure you want to delete "{{ form.name || 'this group' }}"?</p>
+        <div class="config-panel__confirm-actions">
+          <button class="config-panel__btn-secondary" @click="showDeleteConfirm = false">Cancel</button>
+          <button class="config-panel__btn-danger" @click="handleDelete" :disabled="deleting">{{ deleting ? 'Deleting...' : 'Delete' }}</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -175,6 +193,9 @@ const ENTITY_TYPE_OPTIONS = [
 const ENTITY_TYPE_LABELS = {};
 ENTITY_TYPE_OPTIONS.forEach(e => { ENTITY_TYPE_LABELS[e.value] = e.label; });
 
+const PRODUCT_ENTITIES = new Set(['product_product', 'product_sku', 'product_brand', 'product_category']);
+const PRODUCT_OR_STORE_ENTITIES = new Set([...PRODUCT_ENTITIES, 'store', 'store_attribute_set']);
+
 let keyCounter = 0;
 
 export default {
@@ -183,15 +204,20 @@ export default {
     allEntityOptions: { type: Array, default: () => [] },
     panelWidth: { type: String, default: '380px' },
   },
-  emits: ['close', 'save'],
+  emits: ['close', 'save', 'delete'],
   setup(props, { emit }) {
     const saving = ref(false);
+    const deleting = ref(false);
+    const showDeleteConfirm = ref(false);
     const isNew = computed(() => !props.group?.id);
     const entityPickerOpen = ref(false);
     const entityPickerIdx = ref(null);
     const entitySearch = ref('');
 
     const entityTypeOptions = ENTITY_TYPE_OPTIONS;
+
+    function isProductEntity(entity) { return PRODUCT_ENTITIES.has(entity); }
+    function isProductOrStoreEntity(entity) { return PRODUCT_OR_STORE_ENTITIES.has(entity); }
 
     const defaultCondition = () => ({
       _key: `cond_${++keyCounter}`,
@@ -234,6 +260,7 @@ export default {
       } else {
         form.value = { id: null, name: '', conditions: [defaultCondition()] };
       }
+      showDeleteConfirm.value = false;
     }, { immediate: true });
 
     function addCondition() {
@@ -306,16 +333,26 @@ export default {
         const payload = {
           id: form.value.id || undefined,
           name: form.value.name,
-          conditions: form.value.conditions.map(c => ({
-            id: c.id || undefined,
-            entity: c.entity,
-            entity_ids: c.entity_ids || [],
-            operator: c.operator || 'OR',
-            threshold_unit: c.threshold_unit || null,
-            min_threshold: c.min_threshold ?? null,
-            max_threshold: c.max_threshold ?? null,
-            apply_to_excess_only: c.apply_to_excess_only || false,
-          })),
+          conditions: form.value.conditions.map(c => {
+            const base = {
+              id: c.id || undefined,
+              entity: c.entity,
+              entity_ids: c.entity_ids || [],
+              operator: isProductOrStoreEntity(c.entity) ? (c.operator || 'OR') : 'OR',
+            };
+            if (isProductEntity(c.entity)) {
+              base.threshold_unit = c.threshold_unit || null;
+              base.min_threshold = c.min_threshold ?? null;
+              base.max_threshold = c.max_threshold ?? null;
+              base.apply_to_excess_only = c.apply_to_excess_only || false;
+            } else {
+              base.threshold_unit = null;
+              base.min_threshold = null;
+              base.max_threshold = null;
+              base.apply_to_excess_only = false;
+            }
+            return base;
+          }),
         };
         emit('save', payload);
       } finally {
@@ -323,14 +360,28 @@ export default {
       }
     }
 
+    async function handleDelete() {
+      deleting.value = true;
+      try {
+        emit('delete', { groupId: form.value.id });
+      } finally {
+        deleting.value = false;
+        showDeleteConfirm.value = false;
+      }
+    }
+
     return {
       form,
       isNew,
       saving,
+      deleting,
+      showDeleteConfirm,
       entityTypeOptions,
       entityPickerOpen,
       entitySearch,
       filteredEntities,
+      isProductEntity,
+      isProductOrStoreEntity,
       addCondition,
       removeCondition,
       moveCondition,
@@ -341,6 +392,7 @@ export default {
       getEntityName,
       formatEntityType,
       handleSave,
+      handleDelete,
     };
   },
 };
@@ -390,11 +442,22 @@ export default {
   &__radio-group { display: flex; gap: var(--p-space-400); }
   &__radio-item {
     @include polaris-radio-wrapper; font-size: var(--p-font-size-350);
-    input[type="radio"] { @include polaris-radio; }
+    input[type="radio"] { @include polaris-radio; box-sizing: border-box; }
   }
   &__footer { @include polaris-modal-footer; }
   &__btn-primary { @include polaris-button-primary; }
   &__btn-secondary { @include polaris-button-default; }
+  &__btn-danger {
+    @include polaris-button-critical;
+    font-size: var(--p-font-size-350);
+    gap: 6px;
+  }
+
+  &__delete-section {
+    margin-top: var(--p-space-200);
+    padding-top: var(--p-space-400);
+    border-top: 1px solid var(--p-color-border);
+  }
 
   &__section-title {
     @include polaris-text-body;
@@ -417,6 +480,42 @@ export default {
     font-size: var(--p-font-size-300);
     gap: var(--p-space-100);
     margin-top: var(--p-space-200);
+  }
+
+  &__confirm-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__confirm-modal {
+    background: var(--p-color-bg-surface);
+    border-radius: var(--p-border-radius-300);
+    box-shadow: var(--p-shadow-popover);
+    padding: var(--p-space-500);
+    max-width: 320px;
+    width: 90%;
+  }
+
+  &__confirm-title {
+    @include polaris-text-heading-sm;
+    margin: 0 0 var(--p-space-200);
+  }
+
+  &__confirm-desc {
+    @include polaris-text-body;
+    color: var(--p-color-text-secondary);
+    margin: 0 0 var(--p-space-400);
+  }
+
+  &__confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--p-space-200);
   }
 }
 
