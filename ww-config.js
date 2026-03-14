@@ -96,6 +96,34 @@ export default {
     },
   ],
   properties: {
+    pageTitle: {
+      label: { en: 'Page Title' },
+      type: 'Text',
+      section: 'settings',
+      bindable: true,
+      defaultValue: 'Conditional Currency Multipliers',
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Main heading text for the page',
+      },
+      propertyHelp: 'The page title displayed at the top of the component.',
+      /* wwEditor:end */
+    },
+    pageDescription: {
+      label: { en: 'Page Description' },
+      type: 'Text',
+      section: 'settings',
+      bindable: true,
+      defaultValue: 'Configure reward multipliers based on tier, products, and time conditions.',
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Subtitle description text below the page title',
+      },
+      propertyHelp: 'The page description displayed below the title.',
+      /* wwEditor:end */
+    },
     supabaseUrl: {
       label: { en: 'Supabase URL' },
       type: 'Text',

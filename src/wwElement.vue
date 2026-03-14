@@ -1,6 +1,23 @@
 <template>
   <div class="es" ref="rootRef">
     <div class="es__scroll-area">
+    <div class="es__page-header">
+      <div class="es__page-header-left">
+        <h1 class="es__page-title">{{ content?.pageTitle || 'Conditional Currency Multipliers' }}</h1>
+        <p class="es__page-desc">{{ content?.pageDescription || 'Configure reward multipliers based on tier, products, and time conditions.' }}</p>
+      </div>
+      <div class="es__page-header-right">
+        <div class="es__filter-bar">
+          <input class="es__search-input" v-model="searchFactorGroup" placeholder="Search earn factor group..." />
+          <input class="es__search-input" v-model="searchCondGroup" placeholder="Search condition group..." />
+          <select class="es__filter-select" v-model="filterFactorType">
+            <option value="">Earn Factor</option>
+            <option value="rate">Base rate</option>
+            <option value="multiplier">Multiplier</option>
+          </select>
+        </div>
+      </div>
+    </div>
     <div class="es__layout" ref="layoutRef">
       <div class="es__header-row">
         <div class="es__col-head es__col-head--left">
@@ -72,7 +89,7 @@
                           <span>{{ f._condGroupInfo.conditions?.length || 0 }} condition{{ (f._condGroupInfo.conditions?.length || 0) !== 1 ? 's' : '' }}</span>
                           <template v-if="f._condGroupInfo.linkedCount > 0">
                             <span class="es__linked-badge">
-                              <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M6.5 9.5l3-3M5 11l-1.5 1.5a2 2 0 01-2.8-2.8L2.2 8.2M11 5l1.5-1.5a2 2 0 00-2.8-2.8L8.2 2.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.25 8.75L8.75 5.25" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M6.125 10.5L4.958 11.667a2.187 2.187 0 01-3.092-3.092L3.034 7.408a2.187 2.187 0 013.091 0" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M7.875 3.5l1.167-1.167a2.187 2.187 0 013.092 3.092L10.966 6.592a2.187 2.187 0 01-3.091 0" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
                               {{ f._condGroupInfo.linkedCount }}
                             </span>
                           </template>
@@ -264,19 +281,13 @@
       @close="connectPopup.open = false" @select="handleConnectSelect" />
     </div>
 
-    <transition name="es-backdrop">
-      <div v-if="panel" class="es__panel-backdrop" @click="panel = null"></div>
-    </transition>
-    <transition name="es-slide">
-      <EarnFactorConfig v-if="panel === 'factor'" :factor="editingFactor" :group-id="editingGroupId"
-        :condition-groups="allCondGroups" :ticket-types="ticketTypes" :panel-width="content?.configPanelWidth || '400px'"
-        @close="panel = null" @save="saveFactorConfig" />
-    </transition>
-    <transition name="es-slide">
-      <EarnConditionGroupConfig v-if="panel === 'condition'" :group="editingCondGroup"
-        :all-entity-options="entityOptions" :panel-width="content?.configPanelWidth || '400px'"
-        @close="panel = null" @save="saveCondGroupConfig" />
-    </transition>
+    <div v-if="panel" class="es__panel-backdrop" @click="panel = null"></div>
+    <EarnFactorConfig v-if="panel === 'factor'" class="es__config-panel" :factor="editingFactor" :group-id="editingGroupId"
+      :condition-groups="allCondGroups" :ticket-types="ticketTypes" :panel-width="content?.configPanelWidth || '400px'"
+      @close="panel = null" @save="saveFactorConfig" />
+    <EarnConditionGroupConfig v-if="panel === 'condition'" class="es__config-panel" :group="editingCondGroup"
+      :all-entity-options="entityOptions" :panel-width="content?.configPanelWidth || '400px'"
+      @close="panel = null" @save="saveCondGroupConfig" />
   </div>
 </template>
 
@@ -326,6 +337,9 @@ export default {
     const connectPopup = ref({ open: false, pos: null, factorId: null, groupId: null });
     const lines = ref([]);
     const expandedConds = ref({});
+    const searchFactorGroup = ref('');
+    const searchCondGroup = ref('');
+    const filterFactorType = ref('');
     let lineTimer = null, ro = null;
 
     const groupNameMap = computed(() => {
@@ -350,9 +364,17 @@ export default {
     const groupedEntries = computed(() => {
       const condGroups = allCondGroups.value || [];
       const allF = Object.values(factorsByGroup.value || {}).flat();
-      return (factorGroups.value || []).filter(g => g?.id).map(g => ({
+      const fgq = searchFactorGroup.value?.toLowerCase()?.trim() || '';
+      const ftf = filterFactorType.value || '';
+      return (factorGroups.value || []).filter(g => g?.id).filter(g => {
+        if (fgq && !(g.name || '').toLowerCase().includes(fgq)) return false;
+        return true;
+      }).map(g => ({
         group: g,
-        factors: (factorsByGroup.value[g.id] || []).map(f => {
+        factors: (factorsByGroup.value[g.id] || []).filter(f => {
+          if (ftf && f?.earn_factor_type !== ftf) return false;
+          return true;
+        }).map(f => {
           const cid = f?.earn_conditions_group_id;
           let _condGroupInfo = null;
           if (cid) {
@@ -377,7 +399,12 @@ export default {
     const unlinkedCondGroups = computed(() => {
       const allF = Object.values(factorsByGroup.value || {}).flat();
       const linked = new Set(allF.map(f => f?.earn_conditions_group_id).filter(Boolean));
-      return (allCondGroups.value || []).filter(g => g?.id && !linked.has(g.id)).map(g => ({
+      const cgq = searchCondGroup.value?.toLowerCase()?.trim() || '';
+      return (allCondGroups.value || []).filter(g => {
+        if (!g?.id || linked.has(g.id)) return false;
+        if (cgq && !(g.name || '').toLowerCase().includes(cgq)) return false;
+        return true;
+      }).map(g => ({
         ...g, _conditions: condCache.value[g.id]?.conditions || g?.conditions || [],
       }));
     });
@@ -452,6 +479,7 @@ export default {
       rootRef, layoutRef, svgRef, content: computed(() => props.content),
       factorGroups, allCondGroups, entityOptions, ticketTypes,
       loadingFactorGroups, loadingConditionGroups, expandedConds,
+      searchFactorGroup, searchCondGroup, filterFactorType,
       panel, editingFactor, editingGroupId, editingCondGroup,
       showModal, modalType, hoveredLine, connectPopup,
       linkedGroupEntries, unlinkedGroupsWithFactors, emptyGroups,
@@ -491,6 +519,46 @@ $right-width: 480px;
     overflow: auto;
     padding: 0 var(--p-space-600) 64px;
     position: relative;
+  }
+
+  &__page-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: var(--p-space-500) 0 var(--p-space-400);
+    gap: 24px;
+  }
+  &__page-header-left { flex-shrink: 0; }
+  &__page-title {
+    font-size: 20px; font-weight: var(--p-font-weight-semibold);
+    color: var(--p-color-text); margin: 0 0 4px; line-height: 1.3;
+  }
+  &__page-desc {
+    font-size: 13px; color: var(--p-color-text-secondary);
+    margin: 0; line-height: 1.4;
+  }
+  &__page-header-right { display: flex; align-items: center; flex-shrink: 0; }
+  &__filter-bar {
+    display: flex; align-items: center; gap: 8px;
+  }
+  &__search-input {
+    width: 200px; min-height: 32px;
+    padding: 6px 10px 6px 32px;
+    font-family: var(--p-font-family-sans); font-size: 13px;
+    color: var(--p-color-text); background: var(--p-color-bg-surface);
+    border: 1px solid var(--p-color-border); border-radius: var(--p-border-radius-200);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%235c5f62' d='M8 12a4 4 0 1 1 0-8 4 4 0 0 1 0 8m9.707 4.293-4.82-4.82A5.968 5.968 0 0 0 14 8 6 6 0 0 0 2 8a6 6 0 0 0 6 6 5.968 5.968 0 0 0 3.473-1.113l4.82 4.82a.997.997 0 0 0 1.414 0 .999.999 0 0 0 0-1.414'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: 8px center; background-size: 16px;
+    &::placeholder { color: var(--p-color-text-secondary); }
+    &:focus { outline: none; border-color: var(--p-color-focus-ring); box-shadow: 0 0 0 1px var(--p-color-focus-ring); }
+  }
+  &__filter-select {
+    min-height: 32px; padding: 6px 28px 6px 10px;
+    font-family: var(--p-font-family-sans); font-size: 13px;
+    color: var(--p-color-text); background: var(--p-color-bg-surface);
+    border: 1px solid var(--p-color-border); border-radius: var(--p-border-radius-200);
+    appearance: none; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%235c5f62' d='M10 14a.997.997 0 01-.707-.293l-5-5a.999.999 0 111.414-1.414L10 11.586l4.293-4.293a.999.999 0 111.414 1.414l-5 5A.997.997 0 0110 14z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 6px center; background-size: 16px;
+    &:focus { outline: none; border-color: var(--p-color-focus-ring); box-shadow: 0 0 0 1px var(--p-color-focus-ring); }
   }
 
   &__layout { display: flex; flex-direction: column; position: relative; }
@@ -737,15 +805,16 @@ $right-width: 480px;
 
   &__panel-backdrop {
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.25);
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.3);
     z-index: 299;
+    cursor: pointer;
+  }
+
+  &__config-panel {
+    position: absolute;
+    top: 0; right: 0; width: auto; height: 100%;
+    z-index: 300;
   }
 }
-
-.es-backdrop-enter-active, .es-backdrop-leave-active { transition: opacity 0.25s ease; }
-.es-backdrop-enter-from, .es-backdrop-leave-to { opacity: 0; }
-
-.es-slide-enter-active, .es-slide-leave-active { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-.es-slide-enter-from, .es-slide-leave-to { transform: translateX(100%); }
 </style>
