@@ -101,7 +101,7 @@
                 <span class="config-panel__suffix" v-if="cond.threshold_unit === 'amount'">฿</span>
               </div>
             </div>
-            <div class="config-panel__field-separator">To</div>
+            
             <div class="config-panel__field config-panel__field--half">
               <label class="config-panel__label">Maximum cap</label>
               <div class="config-panel__input-suffix">
@@ -122,7 +122,7 @@
       </button>
 
       <div v-if="!isNew" class="config-panel__delete-section">
-        <button class="config-panel__btn-danger" @click="showDeleteConfirm = true">
+        <button class="config-panel__delete-link" @click="showDeleteConfirm = true">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M6 6h8v10H6V6zM4 6h12M8 4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Delete condition group
         </button>
@@ -447,6 +447,8 @@ export default {
   &__footer { @include polaris-modal-footer; }
   &__btn-primary { @include polaris-button-primary; }
   &__btn-secondary { @include polaris-button-default; }
+  &__delete-link { @include polaris-link-destructive; }
+
   &__btn-danger {
     @include polaris-button-critical;
     font-size: var(--p-font-size-350);
@@ -483,10 +485,10 @@ export default {
   }
 
   &__confirm-overlay {
-    position: absolute;
+    position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0, 0, 0, 0.4);
-    z-index: 400;
+    z-index: 500;
     display: flex;
     align-items: center;
     justify-content: center;

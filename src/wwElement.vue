@@ -26,8 +26,8 @@
           <input class="es__search-input" v-model="searchFactorGroup" placeholder="Search earn factor group..." />
           <input class="es__search-input" v-model="searchCondGroup" placeholder="Search condition group..." />
           <select class="es__filter-select" v-model="filterFactorType">
-            <option value="">Earn Factor</option>
-            <option value="rate">Base rate</option>
+            <option value="">All</option>
+            <option value="rate">Earn rate</option>
             <option value="multiplier">Multiplier</option>
           </select>
           <div class="es__create-dropdown" @mouseenter="createMenuOpen = true" @mouseleave="createMenuOpen = false">
@@ -797,7 +797,7 @@ $right-width: 520px;
   }
   &__create-menu {
     position: absolute; top: 100%; right: 0; margin-top: 0;
-    flex-direction: column; min-width: 200px; padding: 4px 0;
+    flex-direction: column; min-width: 210px; padding: 6px 0;
     background: var(--p-color-bg-surface); border: 1px solid var(--p-color-border);
     border-radius: var(--p-border-radius-200); box-shadow: var(--p-shadow-popover);
     z-index: 50;
@@ -813,7 +813,7 @@ $right-width: 520px;
   }
   &__create-menu-item {
     display: flex; align-items: center; gap: 8px;
-    padding: 8px 12px; width: 100%;
+    padding: 10px 14px; width: 100%;
     font-family: var(--p-font-family-sans); font-size: 13px;
     color: var(--p-color-text); background: none; border: none;
     cursor: pointer; text-align: left;

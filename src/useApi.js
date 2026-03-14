@@ -29,7 +29,11 @@ export function useApi(props) {
       const text = await res.text();
       throw new Error(`RPC ${fnName} failed: ${res.status} ${text}`);
     }
-    return res.json();
+    const data = await res.json();
+    if (data && typeof data === 'object' && 'success' in data && data.success === false) {
+      throw new Error(data.title || data.description || `${fnName} failed`);
+    }
+    return data;
   }
 
   async function restGet(table, query = '') {
@@ -118,7 +122,7 @@ export function useApi(props) {
   }
 
   async function fetchTicketTypes() {
-    return restGet('ticket_type', 'select=id,name,ticket_code,is_credit,credit_platform,active_status&order=name.asc');
+    return restGet('ticket_type', 'select=id,name,ticket_code,is_credit,credit_platform&order=name.asc');
   }
 
   return {

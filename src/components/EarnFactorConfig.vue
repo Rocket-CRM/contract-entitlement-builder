@@ -81,7 +81,7 @@
       </div>
 
       <div v-if="!isNew" class="sidebar__delete-section">
-        <button class="sidebar__btn sidebar__btn--danger" @click="showDeleteConfirm = true">
+        <button class="sidebar__delete-link" @click="showDeleteConfirm = true">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M6 6h8v10H6V6zM4 6h12M8 4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Delete earn factor
         </button>
@@ -221,108 +221,44 @@ export default {
   z-index: 300;
   display: flex;
   flex-direction: column;
-  font-family: var(--p-font-family-sans);
+  overflow: hidden;
 
-  &__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--p-space-400);
-    border-bottom: 1px solid var(--p-color-border);
-  }
-
-  &__title {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--p-color-text);
-    margin: 0;
-  }
-
+  &__head { @include polaris-modal-header; }
+  &__title { @include polaris-text-heading-sm; margin: 0; }
   &__x {
     width: 32px; height: 32px;
     display: flex; align-items: center; justify-content: center;
-    background: none; border: none; border-radius: 6px;
+    background: transparent; border: none; border-radius: var(--p-border-radius-100);
     color: var(--p-color-icon); cursor: pointer;
     &:hover { background: var(--p-color-bg-surface-hover); }
   }
 
-  &__body {
-    flex: 1;
-    overflow-y: auto;
-    padding: var(--p-space-400) 24px;
-  }
-
-  &__field {
-    margin-bottom: var(--p-space-400);
-  }
-
-  &__label {
-    display: block;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--p-color-text);
-    margin-bottom: 6px;
-  }
-
+  &__body { flex: 1; overflow-y: auto; padding: var(--p-space-400); }
+  &__field { margin-bottom: var(--p-space-400); }
+  &__label { @include polaris-label; display: block; margin-bottom: var(--p-space-100); }
   &__input {
     @include polaris-input;
-    font-size: 13px;
-
-    &--date {
-      @include polaris-date-field;
-      font-size: 13px;
-    }
+    &--date { @include polaris-date-field; }
   }
+  &__select { @include polaris-select; }
 
-  &__select {
-    @include polaris-select;
-    font-size: 13px;
-  }
-
-  &__row {
-    display: flex;
-    gap: 10px;
-    align-items: flex-end;
-    margin-bottom: var(--p-space-400);
-  }
-
+  &__row { display: flex; gap: var(--p-space-200); align-items: flex-end; margin-bottom: var(--p-space-400); }
   &__col { flex: 1; min-width: 0; }
+  &__row-sep { @include polaris-text-body-subdued; padding-bottom: var(--p-space-200); flex-shrink: 0; }
 
-  &__row-sep {
-    font-size: 13px;
-    color: var(--p-color-text-secondary);
-    padding-bottom: 8px;
-    flex-shrink: 0;
-  }
-
-  &__input-wrap {
-    position: relative;
-  }
-
+  &__input-wrap { position: relative; }
   &__input-suffix {
     position: absolute;
-    right: 12px; top: 50%; transform: translateY(-50%);
-    font-size: 13px; color: var(--p-color-text-secondary);
+    right: var(--p-space-300); top: 50%; transform: translateY(-50%);
+    color: var(--p-color-text-secondary); font-size: var(--p-font-size-300);
     pointer-events: none;
   }
 
-  &__radios {
-    display: flex;
-    gap: 24px;
-  }
-
+  &__radios { display: flex; gap: var(--p-space-400); }
   &__radio {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    font-size: 13px;
-    color: var(--p-color-text);
-
-    input[type="radio"] {
-      @include polaris-radio;
-      box-sizing: border-box;
-    }
+    @include polaris-radio-wrapper;
+    font-size: var(--p-font-size-350);
+    input[type="radio"] { @include polaris-radio; box-sizing: border-box; }
   }
 
   &__delete-section {
@@ -331,77 +267,31 @@ export default {
     border-top: 1px solid var(--p-color-border);
   }
 
-  &__foot {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    padding: 16px 24px;
-    border-top: 1px solid var(--p-color-border);
-  }
+  &__delete-link { @include polaris-link-destructive; }
 
+  &__foot { @include polaris-modal-footer; }
   &__btn {
-    @include polaris-button-base;
-    font-size: 13px;
-    padding: 6px 16px;
-    min-height: 32px;
-
-    &--primary {
-      background: var(--p-color-bg-fill-brand);
-      color: #fff;
-      box-shadow: var(--p-shadow-button-primary);
-      &:hover:not(:disabled) { background: var(--p-color-bg-fill-brand-hover); }
-    }
-
-    &--secondary {
-      @include polaris-button-default;
-      font-size: 13px;
-      padding: 6px 16px;
-      min-height: 32px;
-    }
-
-    &--danger {
-      @include polaris-button-critical;
-      font-size: 13px;
-      padding: 6px 16px;
-      min-height: 32px;
-      gap: 6px;
-    }
+    &--primary { @include polaris-button-primary; }
+    &--secondary { @include polaris-button-default; }
+    &--danger { @include polaris-button-critical; gap: 6px; }
   }
 
   &__confirm-overlay {
-    position: absolute;
+    position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0, 0, 0, 0.4);
-    z-index: 400;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    z-index: 500;
+    display: flex; align-items: center; justify-content: center;
   }
-
   &__confirm-modal {
     background: var(--p-color-bg-surface);
     border-radius: var(--p-border-radius-300);
     box-shadow: var(--p-shadow-popover);
     padding: var(--p-space-500);
-    max-width: 320px;
-    width: 90%;
+    max-width: 340px; width: 90%;
   }
-
-  &__confirm-title {
-    @include polaris-text-heading-sm;
-    margin: 0 0 var(--p-space-200);
-  }
-
-  &__confirm-desc {
-    @include polaris-text-body;
-    color: var(--p-color-text-secondary);
-    margin: 0 0 var(--p-space-400);
-  }
-
-  &__confirm-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--p-space-200);
-  }
+  &__confirm-title { @include polaris-text-heading-sm; margin: 0 0 var(--p-space-200); }
+  &__confirm-desc { @include polaris-text-body; color: var(--p-color-text-secondary); margin: 0 0 var(--p-space-400); }
+  &__confirm-actions { display: flex; justify-content: flex-end; gap: var(--p-space-200); }
 }
 </style>
