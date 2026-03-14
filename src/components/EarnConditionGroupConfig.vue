@@ -350,12 +350,10 @@ export default {
 @import 'polaris-weweb-styles';
 
 .config-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
   background: var(--p-color-bg-surface);
-  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.12);
   z-index: 300;
   display: flex;
   flex-direction: column;
@@ -499,28 +497,13 @@ export default {
 }
 
 .operator-toggle {
-  @include polaris-button-group-segmented;
+  @include polaris-segmented-pill;
 
   &__btn {
-    @include polaris-button-default;
-    @include polaris-button-slim;
-    border-radius: 0;
-    margin-left: -1px;
-
-    &:first-child {
-      border-radius: var(--p-border-radius-200) 0 0 var(--p-border-radius-200);
-      margin-left: 0;
-    }
-    &:last-child {
-      border-radius: 0 var(--p-border-radius-200) var(--p-border-radius-200) 0;
-    }
+    @include polaris-segmented-pill-btn;
 
     &--active {
-      background: var(--p-color-bg-fill-brand);
-      color: var(--p-color-text-on-color);
-      box-shadow: none;
-
-      &:hover { background: var(--p-color-bg-fill-brand-hover); }
+      @include polaris-segmented-pill-btn-active;
     }
   }
 }

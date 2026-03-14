@@ -79,9 +79,9 @@ Connection lines are drawn by querying the DOM directly:
 
 ### Known Issues (to fix in next iteration)
 
-1. **Condition table styling** — table cells may appear cutoff or not match the Figma reference design. Items should show as pink pill badges with eye icon; Threshold type should show clipboard icon. Current implementation has the elements but alignment/spacing needs refinement to match Figma (ref: `node-id=1104-17765`).
+1. ~~**Condition table styling**~~ — FIXED. Table now uses `table-layout: fixed` with Figma-accurate column widths (Type 91px, Items 64px, Logic 70px, Threshold type 165px, Excess fill). Items badge uses pink `#F7E6EF`/`#DA3590` pill with eye icon (ViewIcon). Threshold type shows NoteIcon. Header/cell borders use `#EEEEEE`.
 
-2. **Config sidebar panel not floating** — the EarnFactorConfig and EarnConditionGroupConfig panels should float/overlay on top of the content (like a drawer), but currently push content or don't properly overlay. This may be a limitation of the `@weweb/cli` build system or the transition CSS. Needs investigation — Figma ref: `node-id=1089-79631`.
+2. ~~**Config sidebar panel not floating**~~ — FIXED. Restructured DOM: scrollable content is inside `.es__scroll-area`, panels/backdrop are siblings positioned absolutely within `.es` root (avoids `position: fixed` containment issues from WeWeb wrapper transforms). Panels use `position: absolute; top:0; right:0; bottom:0` with semi-transparent backdrop overlay and slide transition.
 
 3. **SVG connection lines may not render in WeWeb editor** — `querySelector` with `data-*` attributes works in standard DOM but may fail in WeWeb's shadow DOM or iframe context.
 

@@ -122,10 +122,10 @@ export default {
 @import 'polaris-weweb-styles';
 
 .sidebar {
-  position: fixed;
-  top: 0; right: 0; height: 100vh;
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
   background: var(--p-color-bg-surface);
-  box-shadow: -2px 0 20px rgba(0,0,0,0.08);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.12);
   z-index: 300;
   display: flex;
   flex-direction: column;

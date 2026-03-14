@@ -1,5 +1,6 @@
 <template>
   <div class="es" ref="rootRef">
+    <div class="es__scroll-area">
     <div class="es__layout" ref="layoutRef">
       <div class="es__header-row">
         <div class="es__col-head es__col-head--left">
@@ -77,34 +78,46 @@
                           </template>
                         </div>
                       </div>
+                      <button class="es__cond-edit" @click.stop="handleEditConditionGroup(f._condGroupInfo.group)" title="Edit condition group">
+                        <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" fill="currentColor"/></svg>
+                      </button>
                       <button class="es__expand-btn" @click.stop="toggleCondExpand(f._dk)"
                         :class="{ 'es__expand-btn--open': expandedConds[f._dk] }">
                         <svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M6 12.5l4-5 4 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                       </button>
                     </div>
                     <div v-if="expandedConds[f._dk] && f._condGroupInfo.conditions?.length" class="es__cond-detail">
-                      <table class="es__cond-table">
-                        <thead><tr><th>Type</th><th>Items</th><th>Logic</th><th>Threshold type</th><th>Excess</th></tr></thead>
-                        <tbody>
-                          <tr v-for="(cond, ci) in f._condGroupInfo.conditions" :key="ci">
-                            <td>{{ formatEntity(cond?.entity) }}</td>
-                            <td>
-                              <span class="es__items-badge">
-                                {{ cond?.entity_ids?.length || 0 }}
-                                <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1"/><circle cx="8" cy="8" r="1" fill="currentColor"/></svg>
-                              </span>
-                            </td>
-                            <td>{{ cond?.operator || '-' }}</td>
-                            <td>
-                              <span class="es__threshold-cell">
-                                {{ formatThreshold(cond?.threshold_unit) }}
-                                <svg v-if="cond?.threshold_unit" width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="3" y="2" width="10" height="12" rx="1.5" stroke="currentColor" stroke-width="1"/><path d="M6 6h4M6 9h3" stroke="currentColor" stroke-width="0.8" stroke-linecap="round"/></svg>
-                              </span>
-                            </td>
-                            <td>{{ cond?.apply_to_excess_only ? 'Yes' : 'No' }}</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                      <div class="es__cond-table-wrap">
+                        <table class="es__cond-table">
+                          <colgroup>
+                            <col class="es__col-type" />
+                            <col class="es__col-items" />
+                            <col class="es__col-logic" />
+                            <col class="es__col-threshold" />
+                            <col class="es__col-excess" />
+                          </colgroup>
+                          <thead><tr><th>Type</th><th>Items</th><th>Logic</th><th>Threshold type</th><th>Excess</th></tr></thead>
+                          <tbody>
+                            <tr v-for="(cond, ci) in f._condGroupInfo.conditions" :key="ci">
+                              <td>{{ formatEntity(cond?.entity) }}</td>
+                              <td>
+                                <span class="es__items-badge">
+                                  {{ cond?.entity_ids?.length || 0 }}
+                                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><ellipse cx="8" cy="8" rx="4.5" ry="3" stroke="currentColor" stroke-width="1"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/><path d="M1.5 8c1.5-3.5 5-5 6.5-5s5 1.5 6.5 5c-1.5 3.5-5 5-6.5 5s-5-1.5-6.5-5z" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+                                </span>
+                              </td>
+                              <td>{{ cond?.operator || '-' }}</td>
+                              <td>
+                                <span class="es__threshold-cell">
+                                  <span>{{ formatThreshold(cond?.threshold_unit) }}</span>
+                                  <svg v-if="cond?.threshold_unit" width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="3" y="1.5" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1" fill="none"/><path d="M6 5.5h4M6 8h3" stroke="currentColor" stroke-width="0.9" stroke-linecap="round"/></svg>
+                                </span>
+                              </td>
+                              <td>{{ cond?.apply_to_excess_only ? 'Yes' : 'No' }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -188,34 +201,46 @@
                           <span>{{ cg._conditions?.length || 0 }} condition{{ (cg._conditions?.length || 0) !== 1 ? 's' : '' }}</span>
                         </div>
                       </div>
+                      <button class="es__cond-edit" @click.stop="handleEditConditionGroup(cg)" title="Edit condition group">
+                        <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" fill="currentColor"/></svg>
+                      </button>
                       <button class="es__expand-btn" @click.stop="toggleCondExpand(cg.id)"
                         :class="{ 'es__expand-btn--open': expandedConds[cg.id] }">
                         <svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M6 12.5l4-5 4 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                       </button>
                     </div>
                     <div v-if="expandedConds[cg.id] && cg._conditions?.length" class="es__cond-detail">
-                      <table class="es__cond-table">
-                        <thead><tr><th>Type</th><th>Items</th><th>Logic</th><th>Threshold type</th><th>Excess</th></tr></thead>
-                        <tbody>
-                          <tr v-for="(cond, ci) in cg._conditions" :key="ci">
-                            <td>{{ formatEntity(cond?.entity) }}</td>
-                            <td>
-                              <span class="es__items-badge">
-                                {{ cond?.entity_ids?.length || 0 }}
-                                <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1"/><circle cx="8" cy="8" r="1" fill="currentColor"/></svg>
-                              </span>
-                            </td>
-                            <td>{{ cond?.operator || '-' }}</td>
-                            <td>
-                              <span class="es__threshold-cell">
-                                {{ formatThreshold(cond?.threshold_unit) }}
-                                <svg v-if="cond?.threshold_unit" width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="3" y="2" width="10" height="12" rx="1.5" stroke="currentColor" stroke-width="1"/><path d="M6 6h4M6 9h3" stroke="currentColor" stroke-width="0.8" stroke-linecap="round"/></svg>
-                              </span>
-                            </td>
-                            <td>{{ cond?.apply_to_excess_only ? 'Yes' : 'No' }}</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                      <div class="es__cond-table-wrap">
+                        <table class="es__cond-table">
+                          <colgroup>
+                            <col class="es__col-type" />
+                            <col class="es__col-items" />
+                            <col class="es__col-logic" />
+                            <col class="es__col-threshold" />
+                            <col class="es__col-excess" />
+                          </colgroup>
+                          <thead><tr><th>Type</th><th>Items</th><th>Logic</th><th>Threshold type</th><th>Excess</th></tr></thead>
+                          <tbody>
+                            <tr v-for="(cond, ci) in cg._conditions" :key="ci">
+                              <td>{{ formatEntity(cond?.entity) }}</td>
+                              <td>
+                                <span class="es__items-badge">
+                                  {{ cond?.entity_ids?.length || 0 }}
+                                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><ellipse cx="8" cy="8" rx="4.5" ry="3" stroke="currentColor" stroke-width="1"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/><path d="M1.5 8c1.5-3.5 5-5 6.5-5s5 1.5 6.5 5c-1.5 3.5-5 5-6.5 5s-5-1.5-6.5-5z" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+                                </span>
+                              </td>
+                              <td>{{ cond?.operator || '-' }}</td>
+                              <td>
+                                <span class="es__threshold-cell">
+                                  <span>{{ formatThreshold(cond?.threshold_unit) }}</span>
+                                  <svg v-if="cond?.threshold_unit" width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="3" y="1.5" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1" fill="none"/><path d="M6 5.5h4M6 8h3" stroke="currentColor" stroke-width="0.9" stroke-linecap="round"/></svg>
+                                </span>
+                              </td>
+                              <td>{{ cond?.apply_to_excess_only ? 'Yes' : 'No' }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -234,20 +259,24 @@
           @mouseenter="hoveredLine = ln.key" @mouseleave="hoveredLine = null" style="cursor:pointer" />
       </svg>
     </div>
+    <CreateGroupModal v-if="showModal" :type="modalType" @close="showModal = false" @save="handleModalSave" />
+    <ConnectPopup v-if="connectPopup.open" :condition-groups="allCondGroups" :position="connectPopup.pos"
+      @close="connectPopup.open = false" @select="handleConnectSelect" />
+    </div>
 
-    <transition name="slide">
+    <transition name="es-backdrop">
+      <div v-if="panel" class="es__panel-backdrop" @click="panel = null"></div>
+    </transition>
+    <transition name="es-slide">
       <EarnFactorConfig v-if="panel === 'factor'" :factor="editingFactor" :group-id="editingGroupId"
         :condition-groups="allCondGroups" :ticket-types="ticketTypes" :panel-width="content?.configPanelWidth || '400px'"
         @close="panel = null" @save="saveFactorConfig" />
     </transition>
-    <transition name="slide">
+    <transition name="es-slide">
       <EarnConditionGroupConfig v-if="panel === 'condition'" :group="editingCondGroup"
         :all-entity-options="entityOptions" :panel-width="content?.configPanelWidth || '400px'"
         @close="panel = null" @save="saveCondGroupConfig" />
     </transition>
-    <CreateGroupModal v-if="showModal" :type="modalType" @close="showModal = false" @save="handleModalSave" />
-    <ConnectPopup v-if="connectPopup.open" :condition-groups="allCondGroups" :position="connectPopup.pos"
-      @close="connectPopup.open = false" @select="handleConnectSelect" />
   </div>
 </template>
 
@@ -453,8 +482,16 @@ $right-width: 480px;
   font-family: var(--p-font-family-sans);
   color: var(--p-color-text);
   background: #F8FAFC;
-  width: 100%; height: 100%; overflow: auto;
-  padding: 0 var(--p-space-600) 64px;
+  width: 100%; height: 100%;
+  position: relative;
+  overflow: hidden;
+
+  &__scroll-area {
+    width: 100%; height: 100%;
+    overflow: auto;
+    padding: 0 var(--p-space-600) 64px;
+    position: relative;
+  }
 
   &__layout { display: flex; flex-direction: column; position: relative; }
   &__header-row { display: flex; justify-content: space-between; }
@@ -619,36 +656,71 @@ $right-width: 480px;
     &:hover { background: var(--p-color-bg-fill-transparent-hover); }
   }
 
-  &__cond-detail { border-top: 1px solid var(--p-color-border); }
+  &__cond-edit {
+    width: 28px; height: 28px; min-width: 28px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; border-radius: var(--p-border-radius-100);
+    color: var(--p-color-icon); cursor: pointer; flex-shrink: 0;
+    opacity: 0; transition: opacity 0.15s, background 0.1s;
+    &:hover { background: var(--p-color-bg-fill-transparent-hover); opacity: 1; }
+  }
+  &__card--condition:hover &__cond-edit { opacity: 0.7; }
+
+  &__cond-detail { padding: 0 14px 14px; }
+
+  &__cond-table-wrap {
+    border: 1px solid #EBEDEF;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  &__col-type { width: 91px; }
+  &__col-items { width: 64px; }
+  &__col-logic { width: 70px; }
+  &__col-threshold { width: 165px; }
+  &__col-excess { }
 
   &__cond-table {
-    width: 100%; border-collapse: collapse; font-size: 13px;
+    width: 100%; border-collapse: collapse; font-size: 12px;
+    font-family: var(--p-font-family-sans);
+    table-layout: fixed;
     th {
-      text-align: center; padding: 8px 10px;
-      font-weight: var(--p-font-weight-medium);
-      color: var(--p-color-text-secondary); font-size: 12px;
-      background: var(--p-color-bg-surface-secondary);
-      border-bottom: 1px solid var(--p-color-border);
+      text-align: center; padding: 4px 0;
+      font-weight: 400;
+      color: #1E2021; font-size: 12px;
+      background: #F8FAFC;
+      border-bottom: 1px solid #EEEEEE;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      &:first-child { border-left: none; }
+      &:last-child { border-right: none; }
     }
+    th + th { border-left: 1px solid #EEEEEE; }
     td {
-      text-align: center; padding: 10px 8px;
-      border-bottom: 1px solid var(--p-color-border);
-      color: var(--p-color-text);
+      text-align: center; padding: 6px 0;
+      border-bottom: 1px solid #EEEEEE;
+      color: #1E2021; font-size: 12px;
+      vertical-align: middle;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
+    td + td { border-left: 1px solid #EEEEEE; }
     tr:last-child td { border-bottom: none; }
   }
 
   &__items-badge {
     display: inline-flex; align-items: center; gap: 4px;
-    padding: 2px 8px; border-radius: 10px;
-    background: #FDE8E8; color: #D82C0D;
-    font-size: 12px; font-weight: var(--p-font-weight-semibold);
-    svg { opacity: 0.6; }
+    padding: 2px 8px; border-radius: 8px;
+    background: #F7E6EF; color: #DA3590;
+    font-size: 12px; font-weight: 500;
+    height: 20px; box-sizing: border-box;
+    line-height: 1;
+    svg { opacity: 0.64; flex-shrink: 0; }
   }
 
   &__threshold-cell {
-    display: inline-flex; align-items: center; gap: 4px;
-    svg { color: var(--p-color-icon); opacity: 0.5; }
+    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+    width: 100%; padding: 0 12px; box-sizing: border-box;
+    span { white-space: nowrap; }
+    svg { color: #B5B5B5; flex-shrink: 0; }
   }
 
   // ─── Divider ───
@@ -662,8 +734,18 @@ $right-width: 480px;
   &__loading { display: flex; justify-content: center; padding: var(--p-space-1200) 0; }
   &__spinner { @include polaris-spinner; }
   &__empty { @include polaris-text-description; text-align: center; padding: var(--p-space-1000) var(--p-space-400); border: 2px dashed var(--p-color-border); border-radius: var(--p-border-radius-200); color: var(--p-color-text-disabled); }
+
+  &__panel-backdrop {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.25);
+    z-index: 299;
+  }
 }
 
-.slide-enter-active, .slide-leave-active { transition: transform var(--p-motion-duration-300) var(--p-motion-ease); }
-.slide-enter-from, .slide-leave-to { transform: translateX(100%); }
+.es-backdrop-enter-active, .es-backdrop-leave-active { transition: opacity 0.25s ease; }
+.es-backdrop-enter-from, .es-backdrop-leave-to { opacity: 0; }
+
+.es-slide-enter-active, .es-slide-leave-active { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.es-slide-enter-from, .es-slide-leave-to { transform: translateX(100%); }
 </style>
