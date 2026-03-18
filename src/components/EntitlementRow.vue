@@ -214,17 +214,13 @@ export default {
   }
 
   &__type-badge {
-    font-size: 11px;
-    font-weight: var(--p-font-weight-semibold);
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    padding: 2px 6px;
-    border-radius: var(--p-border-radius-100);
     flex-shrink: 0;
 
-    &--package { background: #E0E7FF; color: #4F46E5; }
-    &--reward { background: #FEF3C7; color: #D97706; }
-    &--benefit { background: #D1FAE5; color: #059669; }
+    &--package { @include polaris-entity-chip-package; text-transform: uppercase; letter-spacing: 0.3px; }
+    &--reward  { @include polaris-entity-chip-reward; text-transform: uppercase; letter-spacing: 0.3px; }
+    &--benefit { @include polaris-entity-chip-benefit; text-transform: uppercase; letter-spacing: 0.3px; }
   }
 
   &__label {

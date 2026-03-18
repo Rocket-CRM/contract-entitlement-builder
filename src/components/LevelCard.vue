@@ -335,38 +335,10 @@ export default {
 }
 
 .toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 36px;
-  height: 20px;
-  cursor: pointer;
+  @include polaris-toggle-switch;
 
-  input { opacity: 0; width: 0; height: 0; position: absolute; }
+  &__slider { @include polaris-toggle-switch-track; }
 
-  &__slider {
-    position: absolute;
-    inset: 0;
-    background: var(--p-color-bg-fill-disabled);
-    border-radius: 10px;
-    transition: background 0.15s;
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 2px;
-      top: 2px;
-      width: 16px;
-      height: 16px;
-      background: white;
-      border-radius: 50%;
-      transition: transform 0.15s;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-    }
-  }
-
-  input:checked + &__slider {
-    background: var(--p-color-bg-fill-success);
-    &::before { transform: translateX(16px); }
-  }
+  input:checked + &__slider { @include polaris-toggle-switch-track-checked; }
 }
 </style>

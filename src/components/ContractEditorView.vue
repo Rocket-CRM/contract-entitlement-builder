@@ -450,34 +450,21 @@ export default {
   }
 
   &__status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: var(--p-font-size-275);
-    font-weight: var(--p-font-weight-medium);
-    text-transform: capitalize;
-    white-space: nowrap;
     flex-shrink: 0;
 
-    &--active { background: var(--p-color-bg-fill-success-secondary); color: var(--p-color-text-success); }
-    &--draft { background: var(--p-color-bg-surface-secondary); color: var(--p-color-text-secondary); }
-    &--pending { background: #FEF3C7; color: #D97706; }
-    &--suspended { background: #FEE2E2; color: #DC2626; }
-    &--expired { background: var(--p-color-bg-surface-secondary); color: var(--p-color-text-disabled); }
+    &--active   { @include polaris-status-badge-active; }
+    &--draft    { @include polaris-status-badge-draft; }
+    &--pending  { @include polaris-status-badge-pending; }
+    &--suspended { @include polaris-status-badge-suspended; }
+    &--expired  { @include polaris-status-badge-expired; }
   }
 
   &__status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-
-    .editor__status-badge--active & { background: var(--p-color-icon-success); }
-    .editor__status-badge--draft & { background: var(--p-color-icon-secondary); }
-    .editor__status-badge--pending & { background: #D97706; }
-    .editor__status-badge--suspended & { background: #DC2626; }
-    .editor__status-badge--expired & { background: var(--p-color-icon-disabled); }
+    .editor__status-badge--active &    { @include polaris-status-dot-active; }
+    .editor__status-badge--draft &     { @include polaris-status-dot-draft; }
+    .editor__status-badge--pending &   { @include polaris-status-dot-pending; }
+    .editor__status-badge--suspended & { @include polaris-status-dot-suspended; }
+    .editor__status-badge--expired &   { @include polaris-status-dot-expired; }
   }
 
   &__btn {
@@ -655,19 +642,11 @@ export default {
   }
 
   &__status-display {
-    display: inline-flex;
-    align-items: center;
-    padding: var(--p-space-100) var(--p-space-300);
-    border-radius: var(--p-border-radius-200);
-    font-size: var(--p-font-size-325);
-    font-weight: var(--p-font-weight-medium);
-    text-transform: capitalize;
-
-    &--active { background: var(--p-color-bg-fill-success-secondary); color: var(--p-color-text-success); }
-    &--draft { background: var(--p-color-bg-surface-secondary); color: var(--p-color-text-secondary); }
-    &--pending { background: #FEF3C7; color: #D97706; }
-    &--suspended { background: #FEE2E2; color: #DC2626; }
-    &--expired { background: var(--p-color-bg-surface-secondary); color: var(--p-color-text-disabled); }
+    &--active   { @include polaris-status-badge-active; font-size: var(--p-font-size-325); }
+    &--draft    { @include polaris-status-badge-draft; font-size: var(--p-font-size-325); }
+    &--pending  { @include polaris-status-badge-pending; font-size: var(--p-font-size-325); }
+    &--suspended { @include polaris-status-badge-suspended; font-size: var(--p-font-size-325); }
+    &--expired  { @include polaris-status-badge-expired; font-size: var(--p-font-size-325); }
   }
 
   &__help-text {
@@ -729,38 +708,10 @@ export default {
 }
 
 .toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 36px;
-  height: 20px;
-  cursor: pointer;
+  @include polaris-toggle-switch;
 
-  input { opacity: 0; width: 0; height: 0; position: absolute; }
+  &__slider { @include polaris-toggle-switch-track; }
 
-  &__slider {
-    position: absolute;
-    inset: 0;
-    background: var(--p-color-bg-fill-disabled);
-    border-radius: 10px;
-    transition: background 0.15s;
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 2px;
-      top: 2px;
-      width: 16px;
-      height: 16px;
-      background: white;
-      border-radius: 50%;
-      transition: transform 0.15s;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-    }
-  }
-
-  input:checked + &__slider {
-    background: var(--p-color-bg-fill-success);
-    &::before { transform: translateX(16px); }
-  }
+  input:checked + &__slider { @include polaris-toggle-switch-track-checked; }
 }
 </style>

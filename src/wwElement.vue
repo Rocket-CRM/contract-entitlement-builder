@@ -300,71 +300,20 @@ export default {
     accent-color: var(--p-color-bg-fill-brand, #2C6ECB);
   }
 
-  &__toasts {
-    position: absolute;
-    top: var(--p-space-300);
-    right: var(--p-space-400);
-    z-index: 500;
-    display: flex;
-    flex-direction: column;
-    gap: var(--p-space-200);
-    max-width: 380px;
-    pointer-events: none;
-  }
+  &__toasts { @include polaris-toast-container; }
 
   &__toast {
-    pointer-events: auto;
-    border-radius: var(--p-border-radius-200);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
-    overflow: hidden;
-    animation: ceb-toast-in 0.25s ease-out;
+    @include polaris-toast;
 
-    &--success {
-      .ceb__toast-header { background: #1A1A1A; color: #fff; }
-      .ceb__toast-body { background: var(--p-color-bg-surface); color: var(--p-color-text); }
-    }
-    &--error {
-      .ceb__toast-header { background: var(--p-color-bg-fill-critical); color: #fff; }
-      .ceb__toast-body { background: var(--p-color-bg-surface); color: var(--p-color-text); }
-    }
+    &--success .ceb__toast-header { @include polaris-toast-header-success; }
+    &--success .ceb__toast-body   { @include polaris-toast-body; }
+    &--error .ceb__toast-header   { @include polaris-toast-header-error; }
+    &--error .ceb__toast-body     { @include polaris-toast-body; }
   }
 
-  &__toast-header {
-    display: flex;
-    align-items: center;
-    gap: var(--p-space-200);
-    padding: 10px 12px;
-    font-size: 13px;
-    font-weight: 600;
-  }
-
+  &__toast-header { @include polaris-toast-header; }
   &__toast-title { flex: 1; }
-
-  &__toast-close {
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    border: none;
-    color: inherit;
-    cursor: pointer;
-    opacity: 0.7;
-    border-radius: 4px;
-    &:hover { opacity: 1; background: rgba(255, 255, 255, 0.15); }
-  }
-
-  &__toast-body {
-    padding: 10px 12px;
-    font-size: 13px;
-    line-height: 1.4;
-    border-top: 1px solid var(--p-color-border);
-  }
-
-  @keyframes ceb-toast-in {
-    from { opacity: 0; transform: translateX(20px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
+  &__toast-close { @include polaris-toast-close; }
+  &__toast-body { @include polaris-toast-body; }
 }
 </style>

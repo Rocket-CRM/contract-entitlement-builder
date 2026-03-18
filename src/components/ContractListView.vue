@@ -272,17 +272,10 @@ export default {
   }
 
   &__type-chip {
-    font-size: 11px;
-    font-weight: var(--p-font-weight-semibold);
-    text-transform: capitalize;
-    padding: 2px 8px;
-    border-radius: var(--p-border-radius-full);
-    white-space: nowrap;
-
-    &--corporate { background: #E0E7FF; color: #4338CA; }
-    &--insurance { background: #DBEAFE; color: #1D4ED8; }
-    &--vip { background: #FEF3C7; color: #D97706; }
-    &--partner { background: #D1FAE5; color: #059669; }
+    &--corporate { @include polaris-entity-chip-corporate; }
+    &--insurance { @include polaris-entity-chip-insurance; }
+    &--vip { @include polaris-entity-chip-vip; }
+    &--partner { @include polaris-entity-chip-partner; }
   }
 
   &__period-cell {
@@ -294,48 +287,19 @@ export default {
   &__num-cell { text-align: center; }
 
   &__status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: var(--p-font-size-275);
-    font-weight: var(--p-font-weight-medium);
-    text-transform: capitalize;
-    white-space: nowrap;
-
-    &--active {
-      background: var(--p-color-bg-fill-success-secondary);
-      color: var(--p-color-text-success);
-    }
-    &--draft {
-      background: var(--p-color-bg-surface-secondary);
-      color: var(--p-color-text-secondary);
-    }
-    &--pending {
-      background: #FEF3C7;
-      color: #D97706;
-    }
-    &--suspended {
-      background: #FEE2E2;
-      color: #DC2626;
-    }
-    &--expired {
-      background: var(--p-color-bg-surface-secondary);
-      color: var(--p-color-text-disabled);
-    }
+    &--active   { @include polaris-status-badge-active; }
+    &--draft    { @include polaris-status-badge-draft; }
+    &--pending  { @include polaris-status-badge-pending; }
+    &--suspended { @include polaris-status-badge-suspended; }
+    &--expired  { @include polaris-status-badge-expired; }
   }
 
   &__status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-
-    .list-view__status-badge--active & { background: var(--p-color-icon-success); }
-    .list-view__status-badge--draft & { background: var(--p-color-icon-secondary); }
-    .list-view__status-badge--pending & { background: #D97706; }
-    .list-view__status-badge--suspended & { background: #DC2626; }
-    .list-view__status-badge--expired & { background: var(--p-color-icon-disabled); }
+    .list-view__status-badge--active &    { @include polaris-status-dot-active; }
+    .list-view__status-badge--draft &     { @include polaris-status-dot-draft; }
+    .list-view__status-badge--pending &   { @include polaris-status-dot-pending; }
+    .list-view__status-badge--suspended & { @include polaris-status-dot-suspended; }
+    .list-view__status-badge--expired &   { @include polaris-status-dot-expired; }
   }
 
   &__active--yes { color: var(--p-color-text-success); font-weight: var(--p-font-weight-medium); }
