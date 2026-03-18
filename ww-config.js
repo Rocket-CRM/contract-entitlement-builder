@@ -1,20 +1,15 @@
 export default {
   editor: {
     label: {
-      en: 'Earn Studio',
+      en: 'Contract & Entitlement Builder',
     },
-    icon: 'star',
-    customStylePropertiesOrder: [
-      'leftColumnWidth',
-      'rightColumnWidth',
-      'connectionLineColor',
-      'connectionLineActiveColor',
-      'configPanelWidth',
-    ],
+    icon: 'briefcase',
     customSettingsPropertiesOrder: [
       'supabaseUrl',
       'supabaseAnonKey',
       'authToken',
+      'pageTitle',
+      'pageDescription',
     ],
   },
   actions: [
@@ -24,56 +19,67 @@ export default {
       action: 'refreshData',
       /* wwEditor:start */
       actionDescription: {
-        en: 'Reloads all earn factor groups, factors, and condition groups from the database',
+        en: 'Reloads the contract list and picker data (packages, rewards) from the database',
       },
       /* wwEditor:end */
     },
     {
-      name: 'closePanel',
-      label: { en: 'Close Config Panel' },
-      action: 'closePanel',
+      name: 'navigateToList',
+      label: { en: 'Navigate to List View' },
+      action: 'navigateToList',
       /* wwEditor:start */
       actionDescription: {
-        en: 'Closes any open sidebar config panel',
+        en: 'Returns to the contract list view',
+      },
+      /* wwEditor:end */
+    },
+    {
+      name: 'navigateToEditor',
+      label: { en: 'Navigate to Editor' },
+      action: 'navigateToEditor',
+      args: [
+        {
+          name: 'groupId',
+          type: 'Text',
+          label: { en: 'Group ID (optional — blank for new)' },
+          /* wwEditor:start */
+          bindable: true,
+          /* wwEditor:end */
+        },
+      ],
+      /* wwEditor:start */
+      actionDescription: {
+        en: 'Opens the contract editor, optionally loading an existing contract by group ID',
       },
       /* wwEditor:end */
     },
   ],
   triggerEvents: [
     {
-      name: 'earn-factor-group-saved',
-      label: { en: 'On Earn Factor Group Saved' },
-      event: { groupId: '', groupName: '', action: 'created' },
+      name: 'contract-saved',
+      label: { en: 'On Contract Saved' },
+      event: { groupId: '', action: 'created' },
       default: true,
       /* wwEditor:start */
-      getTestEvent: '() => ({ groupId: "uuid-123", groupName: "Standard Earning Rule", action: "created" })',
+      getTestEvent: '() => ({ groupId: "uuid-123", action: "created", levels_created: 2, entitlements_created: 5 })',
       /* wwEditor:end */
     },
     {
-      name: 'earn-factor-saved',
-      label: { en: 'On Earn Factor Saved' },
-      event: { factorId: '', factorType: '', groupId: '' },
+      name: 'view-changed',
+      label: { en: 'On View Changed' },
+      event: { view: 'list', itemId: '' },
       default: true,
       /* wwEditor:start */
-      getTestEvent: '() => ({ factorId: "uuid-456", factorType: "rate", groupId: "uuid-123" })',
+      getTestEvent: '() => ({ view: "editor", itemId: "uuid-123" })',
       /* wwEditor:end */
     },
     {
-      name: 'earn-condition-group-saved',
-      label: { en: 'On Earn Condition Group Saved' },
-      event: { groupId: '', groupName: '', action: 'created' },
+      name: 'data-loaded',
+      label: { en: 'On Data Loaded' },
+      event: { contractCount: 0 },
       default: true,
       /* wwEditor:start */
-      getTestEvent: '() => ({ groupId: "uuid-789", groupName: "Tier Perks", action: "created" })',
-      /* wwEditor:end */
-    },
-    {
-      name: 'connection-changed',
-      label: { en: 'On Connection Changed' },
-      event: { factorId: '', conditionGroupId: '', action: 'linked' },
-      default: true,
-      /* wwEditor:start */
-      getTestEvent: '() => ({ factorId: "uuid-456", conditionGroupId: "uuid-789", action: "linked" })',
+      getTestEvent: '() => ({ contractCount: 5 })',
       /* wwEditor:end */
     },
     {
@@ -85,15 +91,6 @@ export default {
       getTestEvent: '() => ({ message: "Failed to save", code: "SAVE_ERROR" })',
       /* wwEditor:end */
     },
-    {
-      name: 'data-loaded',
-      label: { en: 'On Data Loaded' },
-      event: { factorGroupCount: 0, conditionGroupCount: 0 },
-      default: true,
-      /* wwEditor:start */
-      getTestEvent: '() => ({ factorGroupCount: 3, conditionGroupCount: 5 })',
-      /* wwEditor:end */
-    },
   ],
   properties: {
     pageTitle: {
@@ -101,13 +98,13 @@ export default {
       type: 'Text',
       section: 'settings',
       bindable: true,
-      defaultValue: 'Conditional Currency Multipliers',
+      defaultValue: 'Contracts & Persona Entitlements',
       /* wwEditor:start */
       bindingValidation: {
         type: 'string',
-        tooltip: 'Main heading text for the page',
+        tooltip: 'Main heading text for the list view',
       },
-      propertyHelp: 'The page title displayed at the top of the component.',
+      propertyHelp: 'The page title displayed at the top of the contract list.',
       /* wwEditor:end */
     },
     pageDescription: {
@@ -115,7 +112,7 @@ export default {
       type: 'Text',
       section: 'settings',
       bindable: true,
-      defaultValue: 'Configure reward multipliers based on tier, products, and time conditions.',
+      defaultValue: 'Configure persona groups as contracts with auto-assigned packages, rewards, and benefits per level.',
       /* wwEditor:start */
       bindingValidation: {
         type: 'string',
@@ -135,7 +132,7 @@ export default {
         type: 'string',
         tooltip: 'Supabase project URL',
       },
-      propertyHelp: 'The Supabase project URL for API calls. Defaults to the CRM project.',
+      propertyHelp: 'The Supabase project URL for API calls.',
       /* wwEditor:end */
     },
     supabaseAnonKey: {
@@ -143,7 +140,8 @@ export default {
       type: 'Text',
       section: 'settings',
       bindable: true,
-      defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrZXZtc2VkY2hmdHp0b29sa21pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1MTM2OTgsImV4cCI6MjA2NjA4OTY5OH0.bd8ELGtX8ACmk_WCxR_tIFljwyHgD3YD4PdBDpD-kSM',
+      defaultValue:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrZXZtc2VkY2hmdHp0b29sa21pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1MTM2OTgsImV4cCI6MjA2NjA4OTY5OH0.bd8ELGtX8ACmk_WCxR_tIFljwyHgD3YD4PdBDpD-kSM',
       /* wwEditor:start */
       bindingValidation: {
         type: 'string',
@@ -165,72 +163,6 @@ export default {
       },
       propertyHelp:
         "Bind to the current admin user's JWT from the Supabase auth session. Used for Authorization header in RPC calls.",
-      /* wwEditor:end */
-    },
-
-    leftColumnWidth: {
-      label: { en: 'Left Column Width' },
-      type: 'Length',
-      section: 'style',
-      defaultValue: '580px',
-      bindable: true,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'string',
-        tooltip: 'Width of the earn factor groups column',
-      },
-      /* wwEditor:end */
-    },
-    rightColumnWidth: {
-      label: { en: 'Right Column Width' },
-      type: 'Length',
-      section: 'style',
-      defaultValue: '580px',
-      bindable: true,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'string',
-        tooltip: 'Width of the earn condition groups column',
-      },
-      /* wwEditor:end */
-    },
-    connectionLineColor: {
-      label: { en: 'Connection Line Color' },
-      type: 'Color',
-      section: 'style',
-      defaultValue: '#C9CCCF',
-      bindable: true,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'string',
-        tooltip: 'Color of connection lines between factors and condition groups',
-      },
-      /* wwEditor:end */
-    },
-    connectionLineActiveColor: {
-      label: { en: 'Active Connection Color' },
-      type: 'Color',
-      section: 'style',
-      defaultValue: '#005BD3',
-      bindable: true,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'string',
-        tooltip: 'Color of active/hovered connection lines',
-      },
-      /* wwEditor:end */
-    },
-    configPanelWidth: {
-      label: { en: 'Config Panel Width' },
-      type: 'Length',
-      section: 'style',
-      defaultValue: '380px',
-      bindable: true,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'string',
-        tooltip: 'Width of the sidebar config panel',
-      },
       /* wwEditor:end */
     },
   },
