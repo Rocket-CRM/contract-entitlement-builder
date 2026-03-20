@@ -564,6 +564,7 @@ export default {
 
   &__content {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: var(--p-space-600);
     background: var(--p-color-bg-surface-secondary);
@@ -574,6 +575,7 @@ export default {
 
   &__card {
     @include polaris-card;
+    flex-shrink: 0;
   }
 
   &__card-header {
@@ -660,6 +662,7 @@ export default {
     align-items: center;
     justify-content: space-between;
     gap: var(--p-space-300);
+    flex-shrink: 0;
   }
 
   &__levels-title {
@@ -689,6 +692,7 @@ export default {
     border: 2px dashed var(--p-color-border);
     border-radius: var(--p-border-radius-300);
     background: var(--p-color-bg-surface);
+    flex-shrink: 0;
   }
 
   &__levels-empty-icon { font-size: 36px; margin-bottom: var(--p-space-200); }

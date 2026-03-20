@@ -199,7 +199,7 @@ export default {
   background: var(--p-color-bg-surface);
   border: 1px solid var(--p-color-border);
   border-radius: var(--p-border-radius-300);
-  overflow: hidden;
+  flex-shrink: 0;
 
   &__header {
     display: flex;
@@ -289,6 +289,7 @@ export default {
     border-top: 1px solid var(--p-color-border);
     padding: var(--p-space-400);
     background: var(--p-color-bg-surface-secondary);
+    border-radius: 0 0 var(--p-border-radius-300) var(--p-border-radius-300);
     display: flex;
     flex-direction: column;
     gap: var(--p-space-200);
